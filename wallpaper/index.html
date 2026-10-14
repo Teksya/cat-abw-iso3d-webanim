@@ -14,7 +14,7 @@
 <script src="cat-scene.js"></script>
 <script>
   /* Réglages (modifiables dans Wallpaper Engine, voir project.json) */
-  var settings = { city: 'Saint-Étienne', weather: 'auto', interactive: true };
+  var settings = { city: 'Saint-Étienne', weather: 'auto', interactive: true, laserMode: 'dblclick' };
   var scene = null, timer = null;
 
   /* Météo réelle via Open-Meteo (gratuit, sans clé) : ville -> coordonnées -> météo actuelle */
@@ -33,7 +33,7 @@
   }
 
   function start() {
-    scene = CatScene.create(document.getElementById('wallpaper'), { preset: 'wallpaper', interactive: settings.interactive });
+    scene = CatScene.create(document.getElementById('wallpaper'), { preset: 'wallpaper', interactive: settings.interactive, laserMode: settings.laserMode });
     fetchWeather();
     timer = setInterval(fetchWeather, 20 * 60 * 1000);       // mise à jour toutes les 20 minutes
   }
@@ -43,7 +43,8 @@
       var refresh = false;
       if (p.city) { settings.city = p.city.value; refresh = true; }
       if (p.weather) { settings.weather = p.weather.value; refresh = true; }
-      if (p.interactive) settings.interactive = p.interactive.value;
+      if (p.interactive) { settings.interactive = p.interactive.value; if (scene) scene.set('interactive', settings.interactive); }
+      if (p.laserMode) { settings.laserMode = p.laserMode.value; if (scene) scene.set('laserMode', settings.laserMode); }
       if (scene && refresh) fetchWeather();
     }
   };

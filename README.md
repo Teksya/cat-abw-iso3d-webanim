@@ -69,7 +69,7 @@ Import : Wallpaper Engine > *Créer un fond d'écran* > choisir `wallpaper/index
 
 Météo réelle via [Open-Meteo](https://open-meteo.com) (gratuit, sans clé), mise à jour toutes les 20 minutes : pluie et gouttes sur la vitre, neige, orage avec éclairs, brouillard, ciel couvert. La ville et la météo (réelle ou forcée) se règlent dans Wallpaper Engine.
 
-À la souris : bouger le curseur sur le sol fait apparaître un point laser que la chatonne poursuit (elle se ramasse, remue l'arrière-train et bondit). Le survol de la chatonne la caresse : elle ferme à moitié les yeux et des cœurs apparaissent. L'entrée souris doit être activée dans Wallpaper Engine.
+À la souris : un double-clic allume ou éteint le point laser (réglable : clic maintenu, ou mouvement rapide). Elle le poursuit, se ramasse à portée, remue l'arrière-train et bondit pour retomber les pattes sur le point. Le point marche aussi sur les meubles (canapé, bureau, baie, arbre à chat, banquette de fenêtre) : elle saute dessus pour le suivre et redescend quand il retombe au sol. Laser éteint, le survol de la chatonne la caresse : elle ferme à moitié les yeux et des cœurs apparaissent. L'entrée souris doit être activée dans Wallpaper Engine.
 
 Dans une page : `CatScene.create(canvas, { preset: 'wallpaper' })`, puis `scene.setWeather('rain')` ou `scene.setWeather(codeWMO)`. Options utiles : `hour` (heure simulée), `timeScale` (accélère le temps), `script` (liste d'activités dans l'ordre, par exemple `['eat', 'window', 'box']`).
 

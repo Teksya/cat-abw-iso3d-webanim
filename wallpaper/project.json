@@ -21,7 +21,15 @@
           { "label": "Orage", "value": "storm" }
         ]
       },
-      "interactive": { "order": 2, "text": "Laser et caresses à la souris", "type": "bool", "value": true }
+      "interactive": { "order": 2, "text": "Laser et caresses à la souris", "type": "bool", "value": true },
+      "laserMode": {
+        "order": 3, "text": "Allumer le laser", "type": "combo", "value": "dblclick",
+        "options": [
+          { "label": "Double-clic (allume / éteint)", "value": "dblclick" },
+          { "label": "En maintenant le clic", "value": "hold" },
+          { "label": "En bougeant vite la souris", "value": "always" }
+        ]
+      }
     }
   }
 }

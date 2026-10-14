@@ -246,7 +246,55 @@
       });
     }
 
+    /* Affiche originale du grand appartement : chatonne astronaute et planète à anneaux */
+    function drawSpacePoster() {
+      var Y = -19.96;
+      qY(Y, 21, 30.5, 14.5, 26.5, '#101216');                                  // cadre
+      qY(Y + 0.01, 21.4, 30.1, 14.9, 26.1, '#5f5c57');                         // passe-partout
+      var bg = ['#0b1030', '#101640', '#161d4f', '#1c2560', '#232d6e'];
+      for (var i = 0; i < bg.length; i++) qY(Y + 0.02, 22, 29.5, 25.5 - (i + 1) * 1.6, 25.5 - i * 1.6, bg[i]);
+      qY(Y + 0.02, 22, 29.5, 15.5, 17.5, '#232d6e');
+      var st = [[22.6, 24.8], [24.1, 25.1], [26.9, 24.6], [28.8, 25.0], [23.2, 22.2], [29.0, 21.6], [25.3, 23.6], [27.8, 19.4], [22.8, 18.6]];
+      st.forEach(function (q) { px(P(q[0], Y + 0.03, q[1]), '#dfe6ff', Math.max(1, Math.round(K / 6))); });
+      /* Planète à anneaux : sphère ombrée avec bandes, anneau incliné qui passe derrière puis devant */
+      var pcx = 27.0, pcz = 18.3, pr = 1.5, ra = 2.35, rb = 0.5, tilt = 0.22;
+      function ringPt(t) { var x = pcx + Math.cos(t) * ra; return [x, pcz - Math.sin(t) * rb - tilt * (x - pcx) / ra]; }
+      function ringArc(t0, t1, cols) {
+        for (var k = 0; k < 24; k++) {
+          var a0 = t0 + (t1 - t0) * k / 24, a1 = t0 + (t1 - t0) * (k + 1) / 24, p0 = ringPt(a0), p1 = ringPt(a1);
+          line(P(p0[0], Y + 0.04, p0[1]), P(p1[0], Y + 0.04, p1[1]), cols[0]);
+          line(P(p0[0], Y + 0.04, p0[1] - 0.13), P(p1[0], Y + 0.04, p1[1] - 0.13), cols[1]);
+        }
+      }
+      ringArc(Math.PI, 2 * Math.PI, ['#a9824e', '#7a5a34']);                  // moitié arrière (derrière la planète)
+      var bands = ['#b8582a', '#d9773a', '#e8955a', '#d06a33', '#efb26f', '#d9773a', '#b8582a'];
+      for (var zz = pcz - pr; zz < pcz + pr; zz += 1 / K) {
+        var dz = zz + 0.5 / K - pcz, hw = Math.sqrt(Math.max(0, pr * pr - dz * dz)); if (hw <= 0) continue;
+        var bc = bands[Math.min(bands.length - 1, Math.floor((dz / pr + 1) / 2 * bands.length))];
+        var x0 = pcx - hw, x1 = pcx + hw, xs = pcx + hw * 0.25 - dz * 0.2;          // terminateur : ombre côté droit
+        qY(Y + 0.035, x0, Math.min(x1, xs), zz, zz + 1 / K, bc);
+        if (xs < x1) qY(Y + 0.035, Math.max(x0, xs), x1, zz, zz + 1 / K, shade(bc, -0.35));
+        if (x1 - 0.25 > Math.max(x0, xs)) qY(Y + 0.036, x1 - 0.22, x1, zz, zz + 1 / K, shade(bc, -0.55));
+      }
+      discY(Y + 0.037, pcx - 0.6, pcz + 0.65, 0.32, '#f6c993');                // reflet
+      ringArc(0, Math.PI, ['#f1c27a', '#c99a55']);                             // moitié avant (devant la planète)
+      px(P(25.2, Y + 0.04, 20.2), '#c9d3e2', Math.max(1, Math.round(K / 6)));   // petite lune
+      /* Chatonne dans un casque rond qui flotte */
+      discY(Y + 0.03, 24.4, 22.4, 1.75, '#9fb7d9');                            // bulle du casque
+      discY(Y + 0.035, 24.4, 22.4, 1.5, '#2a3a5a');
+      discY(Y + 0.04, 24.4, 22.1, 0.95, '#141012');                            // tête
+      fillPoly([P(23.55, Y + 0.045, 22.6), P(23.85, Y + 0.045, 23.65), P(24.15, Y + 0.045, 22.75)], '#141012');   // oreilles
+      fillPoly([P(24.65, Y + 0.045, 22.75), P(24.95, Y + 0.045, 23.65), P(25.25, Y + 0.045, 22.6)], '#141012');
+      px(P(24.05, Y + 0.05, 22.25), '#5fb8ad', Math.max(1, Math.round(K / 6))); px(P(24.75, Y + 0.05, 22.25), '#5fb8ad', Math.max(1, Math.round(K / 6)));
+      line(P(23.3, Y + 0.05, 23.6), P(23.75, Y + 0.05, 23.95), '#e6eefc');      // reflet sur la vitre
+      qY(Y + 0.03, 23.7, 25.1, 19.9, 20.7, '#c9d3e2');                          // col de la combinaison
+      qY(Y + 0.035, 24.2, 24.6, 20.0, 20.6, '#d9773a');
+      /* Titre : trois barres façon lettrage rétro */
+      qY(Y + 0.03, 22.5, 26.2, 16.1, 16.6, '#f1c27a'); qY(Y + 0.03, 22.5, 24.6, 15.75, 15.95, '#9fb7d9');
+    }
+
     function drawPoster() {
+      if (LARGE) return drawSpacePoster();
       var Y = -19.96;
       qY(Y, 21, 30.5, 14.5, 26.5, '#101216');
       qY(Y + 0.01, 21.4, 30.1, 14.9, 26.1, '#5f5c57');
@@ -1076,7 +1124,8 @@
         var bp = front ? pts[3] : pts[0], yw = front ? yaws[2] : yaws[0];
         var f = [Math.cos(yw), Math.sin(yw), 0], sv = [-Math.sin(yw), Math.cos(yw), 0];
         var J = vadd(vadd(vadd(bp, f, front ? -0.15 : 0.25), sv, s * (front ? 0.45 : 0.5)), [0, 0, 1], front ? -0.45 : -0.35);
-        var reach = front ? q.frontReach : q.backReach, lift = front ? q.frontLift : q.backLift;
+        var paw = front ? (s > 0 ? q.pawL : q.pawR) : 0;
+        var reach = (front ? q.frontReach : q.backReach) + paw * 0.45, lift = (front ? q.frontLift : q.backLift) + paw;
         var ph = q.walkPh + lg[2];
         var G = vadd([J[0], J[1], q.z + 0.32 + lift], f, reach + Math.sin(ph) * 0.75 * q.walk);
         G[2] += Math.max(0, Math.cos(ph)) * 0.6 * q.walk;
@@ -1405,7 +1454,7 @@
 
     /* ================= Poses du chat ================= */
     var BASE = { bodyZ: 2.6, pitch: 0, curl: 0, stretch: 1, headLift: 0.45, headPitch: 0, headYaw: 0,
-      frontReach: 0, backReach: 0, frontLift: 0, backLift: 0, frontTuck: 0, backTuck: 0, air: 0, frontDrop: 1.6, backDrop: 1.6,
+      frontReach: 0, backReach: 0, frontLift: 0, backLift: 0, frontTuck: 0, backTuck: 0, air: 0, frontDrop: 1.6, backDrop: 1.6, pawL: 0, pawR: 0,
       tailUp: 1.1, tailCurl: 0.35, tailWrap: 0, sway: 1, swayF: 1, eyes: 1, mouth: 0, earsBack: 0, walk: 0, breath: 0, roll: 0 };
     function pose(o, from) { var r = {}, k; for (k in BASE) r[k] = (from || BASE)[k]; for (k in o) r[k] = o[k]; return r; }
     function mixP(a, b, t) { var r = {}; for (var k in BASE) r[k] = a[k] + (b[k] - a[k]) * t; return r; }
@@ -1726,8 +1775,13 @@
     }
 
     /* ================= Souris : laser et caresses ================= */
-    var PTR = { px: 0, py: 0, last: -1e9, inside: false }, INPUT = { laser: null, pet: false }, lastBox = null, clockMs = 0;
-    function pointer(cx, cy) { PTR.px = cx; PTR.py = cy; PTR.last = clockMs; PTR.inside = true; }
+    var PTR = { px: 0, py: 0, last: -1e9, inside: false, down: false, laserOn: false, speed: 0 }, INPUT = { laser: null, pet: false }, lastBox = null, clockMs = 0;
+    function pointer(cx, cy) {
+      var dt = Math.max(16, clockMs - PTR.last), v = Math.hypot(cx - PTR.px, cy - PTR.py) / dt * 1000;
+      PTR.speed = PTR.speed * 0.6 + Math.min(4000, v) * 0.4;
+      PTR.px = cx; PTR.py = cy; PTR.last = clockMs; PTR.inside = true;
+    }
+    function toggleLaser() { PTR.laserOn = !PTR.laserOn; }
     function pointerLeave() { PTR.inside = false; }
     function overCat(cx, cy) {
       if (!lastBox) return false;
@@ -1749,17 +1803,60 @@
       if (x < -11 && (y < -11 || y > 29)) return false;               // arbre à chat, carton
       return true;
     }
+    /* Le laser ne s'allume que si on le demande : double-clic (activer/désactiver), clic maintenu,
+       ou au mouvement rapide loin de la chatonne. Sinon, le survol de la chatonne la caresse. */
+    function nearCat(cx, cy, r) { return lastBox && Math.hypot(cx - (lastBox.x0 + lastBox.w / 2), cy - (lastBox.y0 + lastBox.h / 2)) < r + Math.max(lastBox.w, lastBox.h) / 2; }
+    /* Surfaces en hauteur que le laser peut toucher (et où elle peut le suivre) */
+    function inRect(x0, x1, y0, y1) { return function (x, y) { return x > x0 && x < x1 && y > y0 && y < y1; }; }
+    var SURF = {
+      rack:    { z: RACK_TOP, inside: inRect(4.8, 15.2, -19.2, -10.8) },
+      desk:    { z: DESK_TOP, inside: inRect(-13.5, -8.7, -5, 17) },
+      sofa:    { z: 5.2, inside: inRect(23.2, 35.8, -17.8, -14.6) },
+      treeMid: { z: 9.8, inside: inRect(-16, -12, -16.5, -12.5) },
+      treeTop: { z: 18.8, inside: function (x, y) { return Math.hypot(x + 17, y + 17) < 1.8; } },
+      sill:    { z: 15.2, inside: inRect(-19.6, -17, 22.6, 34.4) },
+      floor:   { z: 0, inside: walkable }
+    };
+    function surfZ(name, x, y) { return name === 'desk' && x > -12.6 && x < -9.6 && y > 0.3 && y < 11.3 ? KB_TOP : SURF[name].z; }
+    /* Point visé : surface la plus proche de la caméra sous le curseur */
+    function laserHit(cx, cy) {
+      var u = (cx - OX) / K, w = (cy - OY) / K, best = null;
+      for (var n in SURF) {
+        if (!LARGE && n !== 'floor') continue;
+        var z = SURF[n].z, x = w + z + u / 2, y = w + z - u / 2;
+        if (SURF[n].inside(x, y) && (!best || x + y + z > best.x + best.y + best.z)) best = { x: x, y: y, z: surfZ(n, x, y), surf: n };
+      }
+      return best;
+    }
     function readInput() {
       INPUT.laser = null; INPUT.pet = false;
       if (!PTR.inside || opt.interactive === false) return;
-      var age = clockMs - PTR.last;
-      if (age < 1500 && overCat(PTR.px, PTR.py)) { INPUT.pet = true; return; }
-      if (age < 2500) { var f = floorAt(PTR.px, PTR.py); if (walkable(f[0], f[1])) INPUT.laser = { x: f[0], y: f[1], moving: age < 300 }; }
+      var age = clockMs - PTR.last, mode = opt.laserMode || 'dblclick', want;
+      if (mode === 'hold') want = PTR.down && age < 4000;
+      else if (mode === 'always') want = age < 2500 && PTR.speed > 180 && !nearCat(PTR.px, PTR.py, 40);
+      else want = PTR.laserOn && age < 4000;                                       // le point s'éteint si le curseur ne bouge plus
+      if (want) { INPUT.laser = laserHit(PTR.px, PTR.py); return; }
+      if (age < 1500 && overCat(PTR.px, PTR.py)) INPUT.pet = true;
+    }
+    function ellipse(cx, cy, rx, ry, col) {                    // ellipse pleine à l'écran, bords nets
+      g.fillStyle = col;
+      for (var py = Math.floor(cy - ry); py <= Math.ceil(cy + ry); py++) {
+        var d = (py + 0.5 - cy) / ry; if (d <= -1 || d >= 1) continue;
+        var hw = rx * Math.sqrt(1 - d * d), a = Math.round(cx - hw), b = Math.round(cx + hw);
+        if (b > a) g.fillRect(a, py, b - a, 1);
+      }
+    }
+    function drawBall() {
+      var b = BALL, c = P(b.x, b.y, 0.45), sh = P(b.x, b.y, 0.02), e = Math.max(1, Math.round(K / 8));
+      g.globalAlpha = 0.35; ellipse(sh[0], sh[1] + 1, 0.55 * K, 0.27 * K, '#000'); g.globalAlpha = 1;
+      ellipse(c[0], c[1], 0.45 * K, 0.45 * K, '#c63b3b');
+      ellipse(c[0] - e, c[1] - e, 0.18 * K, 0.18 * K, '#ef7a6a');
+      var a = b.rot * 2; g.fillStyle = '#f2d36b'; g.fillRect(Math.round(c[0] + Math.cos(a) * 0.25 * K), Math.round(c[1] + Math.sin(a) * 0.25 * K), e, e);   // grelot qui tourne
     }
     function drawLaser() {
       var L = INPUT.laser; if (!L) return;
-      var q = P(L.x, L.y, 0.05), fl = 0.85 + 0.15 * Math.sin(clockMs / 40);
-      glow(L.x, L.y, 0.05, 7, 'rgba(255,40,40,' + (0.45 * fl).toFixed(3) + ')');
+      var q = P(L.x, L.y, L.z + 0.05), fl = 0.85 + 0.15 * Math.sin(clockMs / 40);
+      glow(L.x, L.y, L.z + 0.05, 7, 'rgba(255,40,40,' + (0.45 * fl).toFixed(3) + ')');
       g.fillStyle = '#ff2a2a'; g.fillRect(Math.round(q[0]) - 1, Math.round(q[1]) - 1, 3, 2);
       g.fillStyle = '#ffd0d0'; g.fillRect(Math.round(q[0]), Math.round(q[1]) - 1, 1, 1);
     }
@@ -1780,6 +1877,9 @@
         pointer((e.clientX - r.left - (r.width - W * sc) / 2) / sc, (e.clientY - r.top - (r.height - H * sc) / 2) / sc);
       });
       document.addEventListener('mouseleave', pointerLeave);
+      window.addEventListener('mousedown', function (e) { if (e.button === 0) PTR.down = true; });
+      window.addEventListener('mouseup', function () { PTR.down = false; });
+      window.addEventListener('dblclick', toggleLaser);
     }
 
     /* ================= Vie autonome (fond d'écran) =================
@@ -1791,7 +1891,7 @@
     var SCRATCH = pose({ pitch: 0.95, bodyZ: 2.0, frontReach: 0.6, frontLift: 1.9, headPitch: 0.15, tailUp: 0.9, earsBack: 0.2 });
     var RUN = pose({ walk: 1, headLift: 0.25, bodyZ: 2.35, stretch: 1.12, tailUp: 0.4, tailCurl: 0.05, earsBack: 0.35 });
 
-    var LIVE = null;
+    var LIVE = null, BALL = { x: 10, y: 3, vx: 0, vy: 0, hit: false, rot: 0 };
     if (opt.scenario === 'live') LIVE = (function () {
       /* Spots en hauteur : centre, hauteur, point de décollage/atterrissage, point d'approche au sol, orientation de repos */
       var SP = {
@@ -1857,58 +1957,122 @@
       }
 
       /* ---- Déplacements entre les spots ---- */
-      /* Marche au sol en contournant la chaise (côté fenêtre) : passage par WEST puis par le centre */
-      var WEST = [6, 20];
-      function route(tgt) {
-        var a = [pc.x, pc.y], westA = a[1] > 17, westB = tgt[1] > 17;
-        if (westA !== westB) {
-          if (westA) { walkTo(WEST[0], WEST[1]); if (dist(WEST, tgt) > 10) walkTo(HUB[0], HUB[1]); }
-          else { if (dist(a, WEST) > 10 && dist(a, HUB) > 4) walkTo(HUB[0], HUB[1]); walkTo(WEST[0], WEST[1]); }
-        } else if (!westA && dist(a, tgt) > 14 && dist(a, HUB) > 4 && dist(HUB, tgt) > 4) walkTo(HUB[0], HUB[1]);
-        walkTo(tgt[0], tgt[1]);
-      }
-      function leaveSpot() {
-        var s;
-        if (pc.at === 'floor') return;
-        if (pc.at === 'box') { turnTo(0); crouch(0.1, 500); leapTo(SP.box.ap[0], SP.box.ap[1], 0, 'floor', 3.2); return; }
-        if (pc.at === 'treeTop') {
-          s = SP.treeTop; walkTo(s.edge[0], s.edge[1], 4); turnTo(Math.atan2(SP.treeMid.c[1] - s.edge[1], SP.treeMid.c[0] - s.edge[0]));
-          crouch(-0.5); leapTo(SP.treeMid.c[0], SP.treeMid.c[1], SP.treeMid.z, 'treeMid');
+      /* Marche fluide : une seule trajectoire courbe (spline) à vitesse constante, accélère au départ et ralentit à l'arrivée.
+         La tête anticipe les virages. */
+      function walkPath(pts, speed, run) {
+        var raw = [[pc.x, pc.y]].concat(pts).filter(function (p, k, a) { return k === 0 || dist(p, a[k - 1]) > 0.3; });
+        if (raw.length < 2) return;
+        var dense = [];
+        for (var k = 0; k < raw.length - 1; k++) {                       // Catmull-Rom
+          var p0 = raw[Math.max(0, k - 1)], p1 = raw[k], p2 = raw[k + 1], p3 = raw[Math.min(raw.length - 1, k + 2)];
+          for (var t = 0; t < 1; t += 0.1) {
+            var t2 = t * t, t3 = t2 * t;
+            dense.push([0, 1].map(function (c) { return 0.5 * (2 * p1[c] + (-p0[c] + p2[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t2 + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * t3); }));
+          }
         }
-        s = SP[pc.at];
-        walkTo(s.edge[0], s.edge[1], 4);
-        turnTo(Math.atan2(s.ap[1] - s.edge[1], s.ap[0] - s.edge[0]));
-        crouch(-0.5); leapTo(s.ap[0], s.ap[1], 0, 'floor');
+        dense.push(raw[raw.length - 1]);
+        var cum = [0];
+        for (k = 1; k < dense.length; k++) cum.push(cum[k - 1] + dist(dense[k - 1], dense[k]));
+        var Ltot = cum[cum.length - 1], v = speed || 7, acc = run ? 0.15 : 0.3, dur = (Ltot / v + acc) * 1000, z = pc.z, h0 = pc.h;
+        function at2(sd) { var a = 0, b = cum.length - 1; while (b - a > 1) { var m = (a + b) >> 1; if (cum[m] < sd) a = m; else b = m; } var f = (sd - cum[a]) / Math.max(1e-6, cum[b] - cum[a]); return [dense[a][0] + (dense[b][0] - dense[a][0]) * f, dense[a][1] + (dense[b][1] - dense[a][1]) * f]; }
+        function sAt(p) { var T = dur / 1000, ta = acc, tt = p * T, vm = Ltot / (T - ta); if (tt < ta) return 0.5 * vm / ta * tt * tt; if (tt > T - ta) { var r2 = T - tt; return Ltot - 0.5 * vm / ta * r2 * r2; } return 0.5 * vm * ta + vm * (tt - ta); }
+        add(dur, function (p) {
+          var sd = Math.max(0, Math.min(Ltot, sAt(p))), a = at2(sd), b = at2(Math.min(Ltot, sd + 0.6)), ah = at2(Math.min(Ltot, sd + 3.5));
+          var hd = Math.atan2(b[1] - a[1], b[0] - a[0]), hh = Math.atan2(ah[1] - a[1], ah[0] - a[0]);
+          if (sd > Ltot - 0.3) hd = Math.atan2(a[1] - at2(Math.max(0, sd - 0.6))[1], a[0] - at2(Math.max(0, sd - 0.6))[0]);
+          var hcur = angLerp(h0, hd, ss(0, Math.min(0.25, 350 / dur), p));
+          var q = pose({}, run ? RUN : WALK);
+          q.headYaw = Math.max(-0.6, Math.min(0.6, angLerp(0, hh - hcur, 1) * 0.8));
+          q.headLift += 0.05 * Math.sin(sd * 5.2);                         // petit balancement de tête
+          return { q: at(q, a[0], a[1], z, hcur, sd * (run ? 1.6 : 2.6)) };
+        }, null, 'walk');
+        var e1 = dense[dense.length - 1], e0 = dense[Math.max(0, dense.length - 3)];
+        place(e1[0], e1[1], z, Math.atan2(e1[1] - e0[1], e1[0] - e0[0]));
       }
-      function climb(name) {
-        var s = SP[name];
-        if (name === 'treeTop') { climb('treeMid'); turnTo(Math.atan2(s.c[1] - pc.y, s.c[0] - pc.x)); crouch(0.6); leapTo(s.c[0], s.c[1], s.z, 'treeTop'); turnTo(s.h); return; }
-        turnTo(Math.atan2(s.edge[1] - pc.y, s.edge[0] - pc.x));
-        crouch(name === 'box' ? 0.2 : 0.55);
-        leapTo(s.edge[0], s.edge[1], s.z, name, name === 'box' ? 3.4 : 0);
-        walkTo(s.c[0], s.c[1], 4);
-        turnTo(s.h);
+      /* Au sol : contourne la chaise côté fenêtre (WEST) et passe par le centre (HUB) */
+      var WEST = [6, 20];
+      function floorRoute(tgt) {
+        var a = [pc.x, pc.y], westA = a[1] > 17, westB = tgt[1] > 17, pts = [];
+        if (westA !== westB) {
+          if (westA) { pts.push(WEST); if (dist(WEST, tgt) > 10) pts.push(HUB); }
+          else { if (dist(a, WEST) > 10 && dist(a, HUB) > 4) pts.push(HUB); pts.push(WEST); }
+        } else if (!westA && dist(a, tgt) > 14 && dist(a, HUB) > 4 && dist(HUB, tgt) > 4) pts.push(HUB);
+        pts.push(tgt);
+        walkPath(pts);
       }
-      function goTo(name) {
-        if (name === pc.at) return;
-        if ((pc.at === 'rack' && name === 'desk') || (pc.at === 'desk' && name === 'rack')) {     // saut direct baie <-> bureau
-          var from = SP[pc.at], to = SP[name];
-          walkTo(from.edge[0], from.edge[1], 4);
-          turnTo(Math.atan2(to.edge[1] - pc.y, to.edge[0] - pc.x)); crouch(0); leapTo(to.edge[0], to.edge[1], to.z, name);
-          if (name === 'rack') { walkTo(to.c[0], to.c[1], 4); turnTo(to.h); }
+      function route(tgt) { floorRoute(tgt); }
+
+      /* Sauts directs entre meubles : point d'appel, point de réception */
+      var JUMPS = {
+        'rack>desk': [[6.0, -11.8], DL], 'rack>treeMid': [[4.9, -15.5], [-12.6, -14.4]], 'rack>sofa': [[15.2, -15.6], [25.0, -16.2]],
+        'desk>sill': [[-12.6, 16.6], [-18.0, 24.2]], 'desk>treeMid': [[-12.2, -4.6], [-13.6, -12.8]], 'treeMid>treeTop': [[-14.3, -14.8], [-17, -17]]
+      };
+      function jumpOf(a, b) {
+        if (JUMPS[a + '>' + b]) return JUMPS[a + '>' + b];
+        if (JUMPS[b + '>' + a]) { var j2 = JUMPS[b + '>' + a]; return [j2[1], j2[0]]; }
+        return null;
+      }
+      var NODES = ['floor', 'rack', 'desk', 'sofa', 'sill', 'treeMid', 'treeTop', 'box'];
+      function linkCost(a, b) {
+        var j3 = jumpOf(a, b); if (j3) return 1 + dist(j3[0], j3[1]) / 25;
+        if ((a === 'floor' && SP[b] && SP[b].ap) || (b === 'floor' && SP[a] && SP[a].ap)) return 2.4;
+        return Infinity;
+      }
+      /* Plus court chemin (Dijkstra sur 8 nœuds) */
+      function findPath(a, b) {
+        var D = {}, prev = {}, done = {};
+        NODES.forEach(function (n) { D[n] = Infinity; }); D[a] = 0;
+        for (;;) {
+          var u = null; NODES.forEach(function (n) { if (!done[n] && (u === null || D[n] < D[u])) u = n; });
+          if (u === null || D[u] === Infinity || u === b) break;
+          done[u] = true;
+          NODES.forEach(function (n) { var c = D[u] + linkCost(u, n); if (c < D[n]) { D[n] = c; prev[n] = u; } });
+        }
+        var path = [b]; while (path[0] !== a && prev[path[0]]) path.unshift(prev[path[0]]);
+        return path[0] === a ? path : [a, b];
+      }
+      function surfacePos(name) { return name === 'floor' ? 0 : name === 'desk' ? KB_TOP : SP[name].z; }
+      function hop(a, b) {
+        var j4 = jumpOf(a, b);
+        if (j4) {                                                         // saut direct d'un meuble à l'autre
+          if (dist([pc.x, pc.y], j4[0]) > 0.4) walkPath([j4[0]], 4);
+          var dz = surfacePos(b) - pc.z;
+          turnTo(Math.atan2(j4[1][1] - pc.y, j4[1][0] - pc.x));
+          crouch(dz > 1 ? 0.55 : dz < -1 ? -0.45 : 0.1, 600 + Math.min(300, dist(j4[0], j4[1]) * 15));
+          leapTo(j4[1][0], j4[1][1], surfacePos(b), b);
           return;
         }
-        leaveSpot();
-        var tgt = SP[name] ? (name === 'treeTop' ? SP.treeMid.ap : SP[name].ap) : FLOOR[name][0];
-        route(tgt);
-        if (SP[name]) { if (name === 'desk') { turnTo(H_DESK); crouch(0.6); leapTo(DL[0], DL[1], KB_TOP, 'desk'); } else climb(name); }
-        else turnTo(FLOOR[name][1]);
+        if (b === 'floor') {                                              // descendre au sol
+          var s = SP[a];
+          if (a === 'box') { turnTo(0); crouch(0.1, 500); leapTo(s.ap[0], s.ap[1], 0, 'floor', 3.2); return; }
+          if (dist([pc.x, pc.y], s.edge) > 0.4) walkPath([s.edge], 4);
+          turnTo(Math.atan2(s.ap[1] - pc.y, s.ap[0] - pc.x));
+          crouch(-0.5); leapTo(s.ap[0], s.ap[1], 0, 'floor');
+          return;
+        }
+        var t2 = SP[b];                                                   // monter depuis le sol
+        floorRoute(t2.ap);
+        var land = b === 'desk' ? DL : t2.edge;
+        turnTo(Math.atan2(land[1] - pc.y, land[0] - pc.x));
+        crouch(b === 'box' ? 0.2 : 0.6);
+        leapTo(land[0], land[1], surfacePos(b), b, b === 'box' ? 3.4 : 0);
       }
+      function goTo(name) {
+        var dest = SP[name] ? name : 'floor';
+        if (dest !== pc.at) {
+          var path = findPath(pc.at, dest);
+          for (var k = 0; k < path.length - 1; k++) hop(path[k], path[k + 1]);
+        }
+        if (SP[name]) { if (name !== 'desk' && dist([pc.x, pc.y], SP[name].c) > 0.5) walkPath([SP[name].c], 4); turnTo(SP[name].h); }
+        else if (FLOOR[name]) { floorRoute(FLOOR[name][0]); turnTo(FLOOR[name][1]); }
+      }
+      function leaveSpot() { if (pc.at !== 'floor') goTo('floor'); }
 
       /* ---- Activités ---- */
       function blink(q, ms, base) { q.eyes = (ms % 3700) < 140 ? 0 : (base === undefined ? 1 : base); }
       function nap(where) {
         goTo(where);
+        if ((where === 'sofa' || where === 'rack' || where === 'treeTop') && rand() < 0.65) knead();
         morph(STAND, LIE, 900);
         morph(LIE, SLEEP, 1400, function (q, p) { q.eyes = 1 - ss(0.3, 0.8, p); });
         holdPose(SLEEP, rr(18000, 45000), function (q, p, ms) { q.earsBack = 0.6 + 0.4 * tri((ms % 9000 - 6000) / 300); }, true);
@@ -1917,6 +2081,63 @@
         morph(AWAKE, STAND, 800);
         if (rand() < 0.5) morph(STAND, STRETCH, 1500, function (q, p) { var k = p < 0.35 ? eio(p / 0.35) : p < 0.6 ? 1 : 1 - eio((p - 0.6) / 0.4); for (var kk in q) q[kk] = STAND[kk] + (STRETCH[kk] - STAND[kk]) * k; });
       }
+      /* Pétrir (patounes alternées) avant de se coucher */
+      function knead(d) {
+        var KN = pose({ bodyZ: 2.1, headLift: 0.25, headPitch: -0.15, eyes: 0.45, tailUp: 0.6, sway: 0.5 });
+        morph(STAND, KN, 450);
+        holdPose(KN, d || rr(2200, 3500), function (q, p, ms) { var w = Math.sin(ms / 170); q.pawL = Math.max(0, w) * 0.55; q.pawR = Math.max(0, -w) * 0.55; q.bodyZ = 2.1 - 0.05 * Math.abs(w); }, false);
+        morph(KN, STAND, 350);
+      }
+      /* Se lécher la patte puis se frotter la tête */
+      function groomPaw() {
+        var GP = pose({ pawR: 1.55, headPitch: -0.35, headYaw: -0.3, eyes: 0.35 }, SIT);
+        morph(STAND, SIT, 650); morph(SIT, GP, 450);
+        holdPose(GP, rr(2500, 3800), function (q, p, ms) { q.headPitch = -0.35 + 0.1 * Math.sin(ms / 140); q.pawR = 1.55 + 0.08 * Math.sin(ms / 140 + 1); });
+        holdPose(GP, 1400, function (q, p, ms) { q.headYaw = -0.3 + 0.5 * Math.sin(ms / 300); q.headPitch = -0.15; q.pawR = 1.7; });
+        morph(GP, SIT, 400); morph(SIT, STAND, 550);
+      }
+      /* Se rouler sur le dos au sol (de préférence au soleil) */
+      function rollFloor(where) {
+        goTo(where);
+        morph(STAND, LIE, 700);
+        var x = pc.x, y = pc.y, h = pc.h;
+        add(3200, function (p, ms) {
+          var q, roll;
+          if (p < 0.22) { var k = eio(p / 0.22); q = mixP(LIE, BELLY, k); roll = Math.PI * k; }
+          else if (p < 0.78) {
+            q = pose({}, BELLY); roll = Math.PI + 0.4 * Math.sin(ms * 0.006);
+            q.frontDrop = 1.0 + 0.35 * Math.sin(ms * 0.012); q.backDrop = 1.1 + 0.35 * Math.sin(ms * 0.012 + Math.PI); q.headYaw = 0.35 * Math.sin(ms * 0.004);
+          } else { var k2 = eio((p - 0.78) / 0.22); q = mixP(BELLY, LIE, k2); roll = Math.PI * (1 - k2); }
+          q.roll = roll;
+          return { q: at(q, x, y, 0, h) };
+        }, null, 'hold');
+        morph(LIE, STAND, 700);
+      }
+      /* Balle : elle la traque, bondit, la tape et la regarde rouler. Chaque manche est planifiée au moment où elle commence
+         (là où la balle s'est vraiment arrêtée). */
+      function ballRound(n) {
+        goTo('floor');
+        var bx = BALL.x, by = BALL.y, ang = Math.atan2(by - pc.y, bx - pc.x), ax = bx - Math.cos(ang) * 3.2, ay = by - Math.sin(ang) * 3.2;
+        if (walkable(ax, ay) && dist([pc.x, pc.y], [ax, ay]) > 0.5) floorRoute([ax, ay]);
+        turnTo(Math.atan2(by - pc.y, bx - pc.x));
+        crouch(-0.35, 700);
+        ang = Math.atan2(by - pc.y, bx - pc.x);
+        leapTo(bx - Math.cos(ang) * 1.3, by - Math.sin(ang) * 1.3, 0, 'floor', 0.9);
+        var x = pc.x, y = pc.y, h = pc.h;
+        add(450, function (p) {                                               // coup de patte
+          var q = pose({ pawR: 1.2 * Math.sin(Math.min(1, p * 1.4) * Math.PI), headPitch: -0.45 }, CROUCH);
+          if (p > 0.35 && !BALL.hit) { BALL.hit = true; var a = h + (Math.random() - 0.5) * 2.2; BALL.vx = Math.cos(a) * 10; BALL.vy = Math.sin(a) * 10; }
+          return { q: at(q, x, y, 0, h) };
+        }, function () { BALL.hit = false; }, 'hold');
+        holdPose(pose({ headPitch: -0.2 }, CROUCH), 1500, function (q) { q.headYaw = Math.max(-0.9, Math.min(0.9, angLerp(0, Math.atan2(BALL.y - y, BALL.x - x) - h, 1))); });
+        add(10, function () { return { q: at(pose({ headPitch: -0.2 }, CROUCH), x, y, 0, h) }; }, function () {
+          var rest = Q; Q = [];
+          if (n > 1) ballRound(n - 1); else sitLook();
+          Q = Q.concat(rest);
+        }, 'turn');
+      }
+      function playBall() { ballRound(2 + Math.floor(rand() * 2)); }
+
       function eat(which) {
         goTo(which);
         morph(STAND, EAT, 500);
@@ -1973,53 +2194,62 @@
 
       /* ---- Poursuite du laser ---- */
       var LASER = null, lastLaserMs = -1e9, laserSeen = 0, chasing = false, curMs = 0;
-      function chaseTask() {
-        var S = null;
+      function chaseTask(surf) {
+        var S = null, STALK = surf === 'floor' ? 5.0 : 3.2, ok = function (x, y) { return SURF[surf].inside(x, y); };
         return function (p, ms) {
           if (!S) S = { x: pc.x, y: pc.y, h: pc.h, ph: 0, mode: 'run', mt: 0, last: ms };
           var dt = Math.min(0.06, (ms - S.last) / 1000); S.last = ms;
           if (curMs - lastLaserMs > 2200 && S.mode !== 'pounce') { this.d = ms; chasing = false; }
-          var L = LASER, tx = L ? L.x : S.x, ty = L ? L.y : S.y, dx = tx - S.x, dy = ty - S.y, d = Math.hypot(dx, dy), q, z = 0;
-          if (S.mode === 'pounce') {                                    // bond sur le point rouge
-            S.mt += dt; var k = Math.min(1, S.mt / 0.38);
-            S.x = S.x0 + (S.x1 - S.x0) * k; S.y = S.y0 + (S.y1 - S.y0) * k; z = 1.4 * Math.sin(Math.PI * k);
-            q = k < 0.5 ? mixP(TAKEOFF, TUCK, k * 2) : mixP(TUCK, REACH, (k - 0.5) * 2); q.pitch = 0.5 * (0.5 - k);
-            if (k >= 1) { S.mode = 'run'; S.mt = 0; }
-          } else if (d > 1.8) {                                          // course
+          var L = LASER && LASER.surf === surf ? LASER : null, tx = L ? L.x : S.x, ty = L ? L.y : S.y, dx = tx - S.x, dy = ty - S.y, d = Math.hypot(dx, dy), q, z = 0;
+          if (S.mode === 'pounce') {                                    // bond : les pattes avant retombent sur le point
+            S.mt += dt; var k = Math.min(1, S.mt / S.dur);
+            S.x = S.x0 + (S.x1 - S.x0) * k; S.y = S.y0 + (S.y1 - S.y0) * k; z = S.apex * 4 * k * (1 - k);
+            q = k < 0.15 ? mixP(CROUCH, TAKEOFF, k / 0.15) : k < 0.55 ? mixP(TAKEOFF, TUCK, (k - 0.15) / 0.4) : mixP(TUCK, REACH, (k - 0.55) / 0.45);
+            q.pitch = 0.55 * (0.5 - k);
+            if (k >= 1) { S.mode = 'pin'; S.mt = 0; }
+          } else if (S.mode === 'pin') {                                // retombée : tapote le point, tête baissée
+            S.mt += dt;
+            q = mixP(LANDING, CROUCH, Math.min(1, S.mt / 0.25)); q.headPitch = -0.7; q.frontLift = 0.5 * Math.abs(Math.sin(S.mt * 9));
+            if (d > 2.2) { S.mode = d > STALK ? 'run' : 'stalk'; S.mt = 0; S.wait = 0.3 + rand() * 0.3; }
+          } else if (d > STALK) {                                        // course, ralentit en approchant
             S.mode = 'run';
-            var v = Math.min(22, 3 + d * 4), hd = Math.atan2(dy, dx);
+            var v = Math.max(5, Math.min(22, 2 + (d - STALK + 1) * 4)), hd = Math.atan2(dy, dx);
             S.h = angLerp(S.h, hd, Math.min(1, dt * 9));
             var nx = S.x + Math.cos(S.h) * v * dt, ny = S.y + Math.sin(S.h) * v * dt;
-            if (walkable(nx, ny)) { S.x = nx; S.y = ny; } else if (walkable(nx, S.y)) S.x = nx; else if (walkable(S.x, ny)) S.y = ny;
+            if (ok(nx, ny)) { S.x = nx; S.y = ny; } else if (ok(nx, S.y)) S.x = nx; else if (ok(S.x, ny)) S.y = ny;
             S.ph += v * dt * (v > 10 ? 1.6 : 2.6);
             q = pose({}, v > 10 ? RUN : WALK);
-          } else {                                                       // tout près : se ramasse, remue, bondit
-            if (S.mode !== 'crouch') { S.mode = 'crouch'; S.mt = 0; S.wait = 0.5 + rand() * 0.5; }
-            S.mt += dt; S.h = angLerp(S.h, Math.atan2(dy, dx), Math.min(1, dt * 6));
-            q = mixP(STAND, CROUCH, Math.min(1, S.mt / 0.25)); q.headPitch = -0.4; q.earsBack = -0.1;
+          } else {                                                       // à portée : se ramasse, remue, puis bondit
+            if (S.mode !== 'stalk') { S.mode = 'stalk'; S.mt = 0; S.wait = 0.45 + rand() * 0.4; }
+            S.mt += dt; S.h = angLerp(S.h, Math.atan2(dy, dx), Math.min(1, dt * 8));
+            q = mixP(STAND, CROUCH, Math.min(1, S.mt / 0.25)); q.headPitch = -0.35; q.earsBack = -0.1;
             if (S.mt > S.wait) {
-              S.mode = 'pounce'; S.mt = 0; S.x0 = S.x; S.y0 = S.y;
-              var reach = Math.min(2.6, d + 0.8), ex = S.x + Math.cos(S.h) * reach, ey = S.y + Math.sin(S.h) * reach;
-              if (!walkable(ex, ey)) { ex = S.x; ey = S.y; }
-              S.x1 = ex; S.y1 = ey;
+              var dir = Math.atan2(dy, dx), len = Math.max(0.4, d - 1.4);                // le centre s'arrête 1,4 avant : pattes et tête sur le point
+              S.h = dir; S.mode = 'pounce'; S.mt = 0; S.x0 = S.x; S.y0 = S.y;
+              S.x1 = S.x + Math.cos(dir) * len; S.y1 = S.y + Math.sin(dir) * len;
+              if (!ok(S.x1, S.y1)) { S.x1 = S.x; S.y1 = S.y; }
+              S.dur = 0.28 + len * 0.045; S.apex = 0.9 + len * 0.18;
             }
           }
-          var out = at(q, S.x, S.y, z, S.h, S.ph);
-          if (S.mode === 'crouch') wiggle(out, ms, Math.min(1, S.mt / 0.3));
+          if (surf !== 'floor' && !L && S.mode === 'run') q = pose({}, STAND);     // point sorti de la surface : elle attend
+          var out = at(q, S.x, S.y, surfZ(surf, S.x, S.y) + z, S.h, S.ph);
+          if (S.mode === 'stalk') wiggle(out, ms, Math.min(1, S.mt / 0.3));
           return { q: out };
         };
       }
       function canInterrupt() { return cur && (cur.kind === 'hold' || cur.kind === 'morph' || cur.kind === 'walk' || cur.kind === 'turn') && lastQ; }
-      function startChase() {
-        var from = lastQ, at0 = cur.at;
+      var chaseSurf = 'floor', surfSeen = 0;
+      /* Va jusqu'à la surface visée (saute dessus ou redescend), puis poursuit le point dessus */
+      function startChase(retarget) {
+        var from = lastQ, at0 = retarget ? chaseSurf : cur.at, surf = LASER.surf;
         place(from.x, from.y, from.z, from.h, at0);
-        Q = []; cur = null; chasing = true;
-        add(380, function (p) { return { q: at(mixP(from, STAND, eio(p)), from.x, from.y, from.z, from.h) }; }, null, 'morph');
-        leaveSpot();
-        add(1e9, chaseTask(), null, 'chase');
-        add(700, function (p) { return { q: at(mixP(STAND, SIT, eio(p)), pc.x, pc.y, 0, pc.h) }; }, null, 'morph');
-        add(2500, function (p, ms) { var q = pose({ headYaw: 0.6 * Math.sin(ms / 900) }, SIT); return { q: at(q, pc.x, pc.y, 0, pc.h) }; }, null, 'hold');
-        add(600, function (p) { return { q: at(mixP(SIT, STAND, eio(p)), pc.x, pc.y, 0, pc.h) }; }, null, 'morph');
+        Q = []; cur = null; chasing = true; chaseSurf = surf;
+        add(retarget ? 250 : 380, function (p) { return { q: at(mixP(from, STAND, eio(p)), from.x, from.y, from.z, from.h) }; }, null, 'morph');
+        if (pc.at !== surf) goTo(surf);
+        add(1e9, chaseTask(surf), function () { pc.at = surf; }, 'chase');
+        add(700, function (p) { return { q: at(mixP(STAND, SIT, eio(p)), pc.x, pc.y, pc.z, pc.h) }; }, null, 'morph');
+        add(2500, function (p, ms) { var q = pose({ headYaw: 0.6 * Math.sin(ms / 900) }, SIT); return { q: at(q, pc.x, pc.y, pc.z, pc.h) }; }, null, 'hold');
+        add(600, function (p) { return { q: at(mixP(SIT, STAND, eio(p)), pc.x, pc.y, pc.z, pc.h) }; }, null, 'morph');
       }
 
       /* ---- Choix de la prochaine activité selon l'heure ---- */
@@ -2036,7 +2266,9 @@
           ['eat', morning ? 5 : 1.5, function () { eat('food'); }],
           ['drink', 1.5, function () { eat('water'); }],
           ['window', night ? 0.8 : 3.5, watchWindow],
-          ['groom', 1.5, function () { goTo('rug'); groom(); }],
+          ['groom', 1.5, function () { goTo('rug'); if (rand() < 0.5) groomPaw(); else groom(); }],
+          ['roll', day || (hour >= 17.5 && hour < 23) ? 1.4 : 0.3, function () { rollFloor(day && sunny && sunPatch(hour) ? 'sun' : 'rug'); }],
+          ['ball', hour >= 17 && hour < 23 ? 2.4 : night ? 0.3 : 1.3, playBall],
           ['scratch', night ? 0.3 : 1.5, scratch],
           ['zoomies', hour >= 17.5 && hour < 23 ? 2.5 : 0.4, zoomies],
           ['box', 2, boxTime],
@@ -2060,13 +2292,22 @@
       return {
         state: function (ms, hour, sunny, input) {
           var dtIn = Math.min(100, ms - curMs); curMs = ms;
+          var bdt = dtIn / 1000, nbx = BALL.x + BALL.vx * bdt, nby = BALL.y + BALL.vy * bdt;      // balle : roule et ralentit
+          if (!walkable(nbx, BALL.y) || nbx < -2 || nbx > 30) BALL.vx *= -0.6; else BALL.x = nbx;
+          if (!walkable(BALL.x, nby) || nby < -9 || nby > 16) BALL.vy *= -0.6; else BALL.y = nby;
+          var fr = Math.pow(0.18, bdt); BALL.vx *= fr; BALL.vy *= fr; BALL.rot += Math.hypot(BALL.vx, BALL.vy) * bdt;
           if (input && input.laser) { LASER = input.laser; lastLaserMs = ms; laserSeen += dtIn; } else laserSeen = 0;
           if (input && input.laser && !chasing && canInterrupt()) {
             var asleep = lastQ.curl > 0.5;
-            if (!asleep || laserSeen > 1500) startChase();
+            if (!asleep || laserSeen > 1500) startChase(false);
           }
+          /* Le point passe sur une autre surface : elle saute dessus (ou redescend) */
+          if (chasing && cur && cur.kind === 'chase' && LASER && LASER.surf !== chaseSurf && ms - lastLaserMs < 300) {
+            surfSeen += dtIn;
+            if (surfSeen > 450) { surfSeen = 0; startChase(true); }
+          } else surfSeen = 0;
           while (!cur || ms - curStart >= cur.d) {
-            if (cur) { if (cur.end) cur.end(); curStart += cur.d; if (lastQ) place(lastQ.x, lastQ.y, lastQ.z, lastQ.h); }
+            if (cur) { if (lastQ) place(lastQ.x, lastQ.y, lastQ.z, lastQ.h); if (cur.end) cur.end(); curStart += cur.d; }
             else curStart = ms;
             if (!Q.length) { var wasDesk = pc.at === 'desk'; plan(hour, sunny); if (powerState === 'off' && !wasDesk) { powerState = 'boot'; bootAt = ms + 4000; } }
             cur = Q.shift();
@@ -2144,7 +2385,7 @@
       drawMugSteam(ms);
       var inBox = LARGE && st.q.x > BOX.x0 && st.q.x < BOX.x1 && st.q.y > BOX.y0 && st.q.y < BOX.y1;
       if (LARGE && !inBox) drawBoxFront();
-      if (LIVE) drawLaser();
+      if (LIVE) { drawBall(); drawLaser(); }
       drawCatShadow(cat);
       lastBox = renderCat(cat);
       drawFace(cat, lastBox);
@@ -2171,7 +2412,8 @@
       requestAnimationFrame(loop);
     }
 
-    var api = { frame: frame, duration: TOTAL, start: start, canvas: cv, state: null, setWeather: setWeather, pointer: pointer, pointerLeave: pointerLeave };
+    var api = { frame: frame, duration: TOTAL, start: start, canvas: cv, state: null, setWeather: setWeather, pointer: pointer, pointerLeave: pointerLeave,
+      toggleLaser: toggleLaser, set: function (k, v) { opt[k] = v; } };
     if (opt.autoplay !== false) {
       var reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduce) frame(opt.stillAt); else start();
