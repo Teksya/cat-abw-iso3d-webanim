@@ -24,7 +24,8 @@
     eyesShut: '#6a4a30',
     pupil:    '#100a06',
     nose:     '#c47a6e',
-    flecksAmount: 1           // 0 = pelage uni, 1 = actuel, 2 = très moucheté
+    flecksAmount: 1,          // 0 = pelage uni, 1 = actuel, 2 = très moucheté
+    hat: false                // chapeau de sorcière (activé d'office avec le thème Halloween)
   };
 
   function createScene(cv, options) {
@@ -32,6 +33,7 @@
     var base = PRESETS[(options && options.preset) || 'banner'];
     for (k0 in base) opt[k0] = base[k0];
     for (k0 in (options || {})) opt[k0] = options[k0];
+    var HW = opt.theme === 'halloween';      // thème Halloween
     var STYLE = {};
     for (k0 in CAT_STYLE) STYLE[k0] = CAT_STYLE[k0];
     for (k0 in (opt.cat || {})) STYLE[k0] = opt.cat[k0];
@@ -204,8 +206,8 @@
         qX(X, 22.2, 33.8, z0, z1, sky[b]);
       }
       /* Lune */
-      discX(X + 0.01, 31.2, 28.2, 1.05, '#e9e4cc');
-      discX(X + 0.02, 31.65, 28.45, 0.85, '#0f172f');
+      if (HW) { discX(X + 0.01, 31.0, 28.0, 1.45, '#f2b25c'); discX(X + 0.02, 31.3, 28.3, 0.5, '#d9963f'); discX(X + 0.02, 30.6, 27.6, 0.35, '#d9963f'); }
+      else { discX(X + 0.01, 31.2, 28.2, 1.05, '#e9e4cc'); discX(X + 0.02, 31.65, 28.45, 0.85, '#0f172f'); }
       /* Étoiles (scintillent en dynamique) */
       for (var i = 0; i < 18; i++) STARS.push([22.6 + rnd() * 10.8, 24 + rnd() * 6.5, rnd() * 6]);
       /* Silhouette de la ville */
@@ -308,12 +310,14 @@
       thick(P(-14.5, 15.0, DESK_TOP + 1.3), P(-14.5, 15.5, DESK_TOP + 1.0), MUG[2], 2);
       thick(P(-14.5, 15.5, DESK_TOP + 1.0), P(-14.5, 15.0, DESK_TOP + 0.5), MUG[2], 2);
 
-      /* Plante grasse */
+      /* Plante grasse (ou citrouille pour Halloween) */
+      if (HW) pumpkin(PUMPKINS[1]); else {
       cyl(-18.3, 15.6, DESK_TOP, DESK_TOP + 1.2, 0.9, TERRA, '#2a1d14');
       var lv = ['#3e7c4c', '#4f8f58', '#2f6040'];
       for (var i = 0; i < 7; i++) {
         var a = i * 0.9, r = 0.35 + (i % 3) * 0.2;
         thick(P(-18.3, 15.6, DESK_TOP + 1.2), P(-18.3 + Math.cos(a) * r * 1.6, 15.6 + Math.sin(a) * r * 1.6, DESK_TOP + 1.6 + (i % 3) * 0.5), lv[i % 3], 2);
+      }
       }
 
       /* Ombre de la chaise de bureau */
@@ -371,6 +375,125 @@
       for (var z = 11.8; z < 20.4; z += 0.9) { var l0 = L(4.92, -3.6), l1 = L(4.92, 3.6); line(P(l0[0], l0[1], z), P(l1[0], l1[1], z), '#25272c'); }
       for (var y = -3.6; y <= 3.6; y += 0.9) { var m = L(4.92, y); line(P(m[0], m[1], 11.6), P(m[0], m[1], 20.3), '#222429'); }
       for (var k = 0; k < outl.length; k++) line(outl[k], outl[(k + 1) % outl.length], '#34373d');
+    }
+
+    /* ---------- Halloween : citrouilles, bougie, toiles, guirlandes ---------- */
+    var PUMPKINS = [
+      { x: -15.2, y: -15.8, z: 0, r: 1.6, s: 1 },         // au sol, dans le coin près du radiateur
+      { x: -18.0, y: 15.4, z: 15.2, r: 1.0, s: 2 },       // sur le bureau
+      { x: 5.6, y: -18.4, z: 13.3, r: 1.1, s: 3 },        // sur la baie, derrière la chatonne
+      { x: -17.6, y: -18.2, z: 0, r: 1.05, s: 4 }         // petite citrouille dans le coin
+    ];
+    var CANDLE = { x: 7.7, y: -19.0, z: 13.3 };
+    var PUMP = pal('#d9721f');
+
+    function pumpkin(pk) {
+      var R0 = pk.r, H0 = pk.r * 1.25, rr = [0.55, 0.92, 1.0, 0.88, 0.45];
+      for (var i = 0; i < 4; i++) {
+        loft(circle(pk.x, pk.y, R0 * rr[i], 16), circle(pk.x, pk.y, R0 * rr[i + 1], 16), pk.z + H0 * i / 4, pk.z + H0 * (i + 1) / 4, PUMP, i === 3 ? undefined : null);
+      }
+      for (var m = -2; m <= 2; m++) {                                      // côtes
+        var a = Math.PI / 4 + m * 0.42, pts = [];
+        for (var k = 0; k <= 4; k++) pts.push(P(pk.x + Math.cos(a) * R0 * rr[k], pk.y + Math.sin(a) * R0 * rr[k], pk.z + H0 * k / 4));
+        for (k = 0; k < 4; k++) line(pts[k], pts[k + 1], PUMP[1]);
+      }
+      cyl(pk.x, pk.y, pk.z + H0, pk.z + H0 + R0 * 0.35, R0 * 0.14, pal('#4a5a2a'));
+    }
+    /* Visage creusé qui vacille (dessiné à chaque image) */
+    function pumpkinFace(pk, t) {
+      var f = 0.7 + 0.3 * Math.abs(Math.sin(t / 95 + pk.s * 2.1) * Math.sin(t / 41 + pk.s));
+      var R0 = pk.r, H0 = pk.r * 1.25, d = 0.7071, cx = pk.x + d * R0 * 0.98, cy = pk.y + d * R0 * 0.98, cz = pk.z + H0 * 0.5;
+      function F(sv, uv) { return P(cx - d * sv * R0, cy + d * sv * R0, cz + uv * R0); }
+      var col = f > 0.85 ? '#ffe27a' : f > 0.72 ? '#ffc94a' : '#f0a030';
+      [-1, 1].forEach(function (s) { fillPoly([F(s * 0.5, 0.05), F(s * 0.2, 0.05), F(s * 0.35, 0.33)], col); });
+      fillPoly([F(-0.1, -0.05), F(0.1, -0.05), F(0, 0.12)], col);
+      fillPoly([F(-0.55, -0.2), F(-0.35, -0.32), F(-0.15, -0.22), F(0.05, -0.34), F(0.25, -0.22), F(0.45, -0.32), F(0.58, -0.2), F(0.3, -0.48), F(-0.3, -0.48)], col);
+      glow(pk.x, pk.y, pk.z + H0 * 0.5, 14 * pk.r * K / 4, 'rgba(255,150,40,' + (0.14 * f).toFixed(3) + ')');
+    }
+    function candle() {
+      cyl(CANDLE.x, CANDLE.y, CANDLE.z, CANDLE.z + 1.1, 0.3, pal('#d8cfb8'), '#efe6cf');
+    }
+    function candleFlame(t) {
+      var f = 0.75 + 0.25 * Math.sin(t / 70) * Math.sin(t / 23), q = P(CANDLE.x, CANDLE.y, CANDLE.z + 1.35 + 0.08 * Math.sin(t / 60));
+      var e = Math.max(1, Math.round(K / 4));
+      g.fillStyle = '#ffd36a'; g.fillRect(Math.round(q[0]), Math.round(q[1]) - e, e, 2 * e);
+      g.fillStyle = '#fff3c4'; g.fillRect(Math.round(q[0]), Math.round(q[1]), e, e);
+      glow(CANDLE.x, CANDLE.y, CANDLE.z + 1.4, 10 * K / 4, 'rgba(255,190,90,' + (0.18 * f).toFixed(3) + ')');
+    }
+    /* Toile d'araignée dans un coin : rayons + arcs */
+    function web(corner, dirA, dirB, len) {
+      var col = 'rgba(215,222,235,0.32)', sp = [];
+      for (var i = 0; i <= 4; i++) {
+        var t = i / 4, d = [dirA[0] * (1 - t) + dirB[0] * t, dirA[1] * (1 - t) + dirB[1] * t, dirA[2] * (1 - t) + dirB[2] * t];
+        sp.push(d); line(P(corner[0], corner[1], corner[2]), P(corner[0] + d[0] * len, corner[1] + d[1] * len, corner[2] + d[2] * len), col);
+      }
+      [0.35, 0.65, 0.95].forEach(function (f) {
+        for (var i = 0; i < 4; i++) {
+          var a = sp[i], b = sp[i + 1], m = 0.88;
+          var A = P(corner[0] + a[0] * len * f, corner[1] + a[1] * len * f, corner[2] + a[2] * len * f);
+          var B = P(corner[0] + b[0] * len * f, corner[1] + b[1] * len * f, corner[2] + b[2] * len * f);
+          var M = P(corner[0] + (a[0] + b[0]) / 2 * len * f * m, corner[1] + (a[1] + b[1]) / 2 * len * f * m, corner[2] + (a[2] + b[2]) / 2 * len * f * m);
+          line(A, M, col); line(M, B, col);
+        }
+      });
+    }
+    /* Guirlande : fil qui pend + positions des ampoules */
+    var BULBS = [];
+    function garland(a, b, sag, n) {
+      var prev = null;
+      for (var i = 0; i <= 24; i++) {
+        var t = i / 24, q = P(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t - sag * 4 * t * (1 - t));
+        if (prev) line(prev, q, '#1a1c22');
+        prev = q;
+      }
+      for (var k = 1; k < n; k++) {
+        var u = k / n;
+        BULBS.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u - sag * 4 * u * (1 - u) - 0.25, k]);
+      }
+    }
+    function drawHalloweenStatic() {
+      web([-19.85, 34.5, 31.5], [0, -1, 0], [0, 0, -1], 3.2);           // coin de la fenêtre
+      web([16.0, -19.9, 13.3], [1, 0, 0], [0, 0, 1], 3.0);              // entre la baie et le mur
+      garland([3.2, -17.2, 23.9], [16.8, -17.2, 23.9], 0.8, 11);        // sous l'étagère
+      garland([-19.3, 19.3, 32.6], [-19.3, 36.7, 32.6], 0.9, 12);       // sur la tringle
+    }
+    function drawHalloweenDynamic(t) {
+      PUMPKINS.forEach(function (pk) { pumpkinFace(pk, t); });
+      candleFlame(t);
+      var cols = ['#ff8a1e', '#a85cff', '#7dff6a'];
+      BULBS.forEach(function (b, i) {
+        var on = Math.sin(t / 380 + i * 1.7) > -0.3;
+        px(P(b[0], b[1], b[2]), on ? cols[i % 3] : '#2a2230', Math.max(1, Math.round(K / 4)));
+      });
+      /* Chauves-souris */
+      var e = Math.max(1, Math.round(K / 4)), bats = opt.scenario === 'avatar' ? [[0, 0.0], [1, 0.45]] : [[0, 0.0], [1, 0.33], [2, 0.66]];
+      bats.forEach(function (bt) {
+        var ph = (t / 6500 + bt[1]) % 1, flap = Math.floor(t / 110 + bt[0] * 3) % 2, q;
+        if (opt.scenario === 'avatar') q = P(2 + ph * 16, -19.6, 15.3 + Math.sin(t / 300 + bt[0] * 2) * 0.5 + bt[0] * 0.8);
+        else {
+          var y = 33.6 - ph * 11.4, z = 26.5 + Math.sin(t / 320 + bt[0] * 2) * 1.0 + bt[0] * 0.9;
+          if (y < 22.4 || y > 33.6 || z < 16.4 || z > 30.6) return;
+          q = P(-19.92, y, z);
+        }
+        var x0 = Math.round(q[0]) - 2 * e, y0 = Math.round(q[1]);
+        g.fillStyle = '#07050b';
+        g.fillRect(x0 + 2 * e, y0, e, e);
+        if (flap) { g.fillRect(x0, y0 - e, e, e); g.fillRect(x0 + e, y0, e, e); g.fillRect(x0 + 3 * e, y0, e, e); g.fillRect(x0 + 4 * e, y0 - e, e, e); }
+        else { g.fillRect(x0, y0 + e, e, e); g.fillRect(x0 + e, y0, e, e); g.fillRect(x0 + 3 * e, y0, e, e); g.fillRect(x0 + 4 * e, y0 + e, e, e); }
+      });
+      /* Petit fantôme qui flotte près de l'affiche (bannière) */
+      if (opt.scenario !== 'avatar') {
+        var G = ['...XXXXX...', '..XXXXXXX..', '.XXXXXXXXX.', '.XX..X..XX.', '.XX..X..XX.', '.XXXXXXXXX.', '.XXXX..XXXX'.slice(0, 11), '.XXXXXXXXX.', '.XXXXXXXXX.', '.XXXXXXXXX.', '.X.XX.XX.X.', '...........'];
+        var gq = P(34, -19.3, 15.5 + Math.sin(t / 700) * 0.6), gx = Math.round(gq[0] + Math.sin(t / 1100) * 3) - 5, gy = Math.round(gq[1]) - 6;
+        g.globalAlpha = 0.78;
+        for (var r = 0; r < G.length; r++) for (var c = 0; c < 11; c++) {
+          var ch = G[r][c];
+          if (ch === 'X') { g.fillStyle = r < 3 ? '#f4f1ff' : '#dcd7ef'; g.fillRect(gx + c, gy + r, 1, 1); }
+          else if ((r === 3 || r === 4) && (c === 3 || c === 4 || c === 6 || c === 7)) { g.fillStyle = '#1a1424'; g.fillRect(gx + c, gy + r, 1, 1); }
+        }
+        g.globalAlpha = 1;
+        glow(34, -19.3, 15.5, 16, 'rgba(200,190,255,0.07)');
+      }
     }
 
     /* ---------- Plante d'intérieur ---------- */
@@ -521,7 +644,7 @@
       var gr = opt.vignette === 'avatar'
         ? g.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.72)
         : g.createRadialGradient(W / 2, H * 0.55, H * 0.6, W / 2, H * 0.55, W * 0.62);
-      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.5)');
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, HW ? 'rgba(28,6,40,0.6)' : 'rgba(0,0,0,0.5)');
       g.fillStyle = gr; g.fillRect(0, 0, W, H);
     }
 
@@ -652,7 +775,10 @@
     function fbm(x, y, z) { return vnoise(x, y, z); }
     var LIGHT = (function () { var v = [-0.3, 0.55, 0.78], l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; })();
     var CURL_SIGN = -1;
-    var ID_BODY = 0, ID_NECK = 1, ID_HEAD = 2, ID_CHEEK = 3, ID_MUZ = 4, ID_EAR = 5, ID_LEG = 6, ID_PAW = 7, ID_TAIL = 8;
+    var ID_BODY = 0, ID_NECK = 1, ID_HEAD = 2, ID_CHEEK = 3, ID_MUZ = 4, ID_EAR = 5, ID_LEG = 6, ID_PAW = 7, ID_TAIL = 8, ID_HAT = 9, ID_BRIM = 10;
+    var C_HAT = ['#0e0814', '#170d20', '#22132f', '#2e1a3f', '#3c2451', '#4b2f63'].map(hex2rgb);
+    var C_BAND = ['#3a1a06', '#5e2c0c', '#8a4214', '#b5591c', '#d77327', '#ef9140'].map(hex2rgb);
+    var HAT = HW || STYLE.hat;
 
     function prim(a, b, ra, rb, k, id, ex) {
       var p = { ax: a[0], ay: a[1], az: a[2], bx: b[0] - a[0], by: b[1] - a[1], bz: b[2] - a[2], ra: ra, rb: rb, k: k, id: id };
@@ -662,10 +788,33 @@
       if (ex) for (var e in ex) p[e] = ex[e];
       return p;
     }
+    /* Cylindre plat (bord du chapeau) : centre c, axe u, rayon r, demi-épaisseur hh */
+    function primCyl(c, u, r, hh, k, id, ex) {
+      var p = { cyl: true, ax: c[0], ay: c[1], az: c[2], ux: u[0], uy: u[1], uz: u[2], r: r, hh: hh, bx: 0, by: 0, bz: 0, bb: 0, ra: r, rb: r, k: k, id: id };
+      p.cx = c[0]; p.cy = c[1]; p.cz = c[2]; p.R = Math.sqrt(r * r + hh * hh) + k * 0.5 + 0.05;
+      if (ex) for (var e in ex) p[e] = ex[e];
+      return p;
+    }
+    var PH_H = 0;                                   // paramètre le long de la primitive (0 à 1), mis à jour par pdist
+    function pdist(p, x, y, z) {
+      var ax = x - p.ax, ay = y - p.ay, az = z - p.az;
+      if (p.cyl) {
+        var t = ax * p.ux + ay * p.uy + az * p.uz, rx = ax - p.ux * t, ry = ay - p.uy * t, rz = az - p.uz * t;
+        var d1 = Math.sqrt(rx * rx + ry * ry + rz * rz) - p.r, d2 = Math.abs(t) - p.hh;
+        PH_H = (t + p.hh) / (2 * p.hh);
+        var o1 = d1 > 0 ? d1 : 0, o2 = d2 > 0 ? d2 : 0;
+        return Math.min(Math.max(d1, d2), 0) + Math.sqrt(o1 * o1 + o2 * o2) - 0.02;
+      }
+      var h = p.bb > 0 ? (ax * p.bx + ay * p.by + az * p.bz) / p.bb : 0;
+      h = h < 0 ? 0 : h > 1 ? 1 : h;
+      PH_H = h;
+      var dx = ax - p.bx * h, dy = ay - p.by * h, dz = az - p.bz * h;
+      return Math.sqrt(dx * dx + dy * dy + dz * dz) - (p.ra + (p.rb - p.ra) * h);
+    }
     function vadd(a, b, s) { return [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s]; }
     function vlen(a) { return Math.hypot(a[0], a[1], a[2]); }
     function vdot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-    var STD = { ax: 1, ay: 1, az: 1, bx: 1, by: 1, bz: 1, ra: 1, rb: 1, k: 1, id: 1, bb: 1, cx: 1, cy: 1, cz: 1, R: 1 };
+    var STD = { ax: 1, ay: 1, az: 1, bx: 1, by: 1, bz: 1, ra: 1, rb: 1, k: 1, id: 1, bb: 1, cx: 1, cy: 1, cz: 1, R: 1, cyl: 1, ux: 1, uy: 1, uz: 1, r: 1, hh: 1 };
     /* Rotation d'un point autour d'un axe (Rodrigues) */
     function rotAxis(p, C, u, th) {
       var vx = p[0] - C[0], vy = p[1] - C[1], vz = p[2] - C[2], c = Math.cos(th), s = Math.sin(th), d = (u[0] * vx + u[1] * vy + u[2] * vz) * (1 - c);
@@ -715,6 +864,14 @@
         var tip = vadd(vadd(vadd(hc, upH, 1.5 - 0.45 * eb), sH, s * (0.76 + 0.3 * eb)), fH, -(0.15 + 0.5 * eb));
         prims.push(prim(base, tip, 0.38, 0.05, 0.1, ID_EAR));
       });
+      if (HAT) {                                    // chapeau de sorcière légèrement penché
+        var hx = vadd(vadd(upH, fH, -0.22), sH, 0.14), hl = vlen(hx); hx = [hx[0] / hl, hx[1] / hl, hx[2] / hl];
+        var hb = vadd(vadd(hc, upH, 0.82), fH, -0.08);
+        prims.push(primCyl(hb, hx, 1.08, 0.05, 0.04, ID_BRIM));
+        var m1 = vadd(hb, hx, 0.95), tipH = vadd(vadd(hb, hx, 1.42), fH, -0.42);
+        prims.push(prim(vadd(hb, hx, 0.04), m1, 0.6, 0.3, 0.04, ID_HAT, { s0: 0 }));
+        prims.push(prim(m1, tipH, 0.3, 0.06, 0.04, ID_HAT, { s0: 1 }));
+      }
       info.head = hc; info.fH = fH; info.sH = sH; info.upH = upH;
       info.eyes = [-1, 1].map(function (s) { return vadd(vadd(vadd(hc, fH, 0.88), sH, s * 0.4), upH, 0.16); });
       info.nose = vadd(vadd(hc, fH, 1.2), upH, -0.14);
@@ -754,6 +911,7 @@
         var C = [(pts[0][0] + pts[3][0]) / 2, (pts[0][1] + pts[3][1]) / 2, q.z + q.bodyZ], U = [Math.cos(q.h), Math.sin(q.h), 0];
         var rp = function (p) { return rotAxis(p, C, U, q.roll); }, rv = function (v) { return rotAxis(v, [0, 0, 0], U, q.roll); };
         prims = prims.map(function (p) {
+          if (p.cyl) { var cc = rp([p.ax, p.ay, p.az]); if (cc[2] < q.z + 0.15) cc[2] = q.z + 0.15; return primCyl(cc, rv([p.ux, p.uy, p.uz]), p.r, p.hh, p.k, p.id); }
           var A = rp([p.ax, p.ay, p.az]), B = rp([p.ax + p.bx, p.ay + p.by, p.az + p.bz]);
           if (A[2] < q.z + p.ra * 0.6) A[2] = q.z + p.ra * 0.6;
           if (B[2] < q.z + p.rb * 0.6) B[2] = q.z + p.rb * 0.6;
@@ -786,11 +944,7 @@
     function sdf(pr, n, x, y, z) {
       var d = 1e9;
       for (var i = 0; i < n; i++) {
-        var p = pr[LIST[i]], ax = x - p.ax, ay = y - p.ay, az = z - p.az;
-        var h = p.bb > 0 ? (ax * p.bx + ay * p.by + az * p.bz) / p.bb : 0;
-        h = h < 0 ? 0 : h > 1 ? 1 : h;
-        var dx = ax - p.bx * h, dy = ay - p.by * h, dz = az - p.bz * h;
-        var di = Math.sqrt(dx * dx + dy * dy + dz * dz) - (p.ra + (p.rb - p.ra) * h);
+        var p = pr[LIST[i]], di = pdist(p, x, y, z);
         if (i === 0) d = di;
         else { var k = p.k, w = k - Math.abs(d - di); d = (d < di ? d : di) - (w > 0 ? w * w / (4 * k) : 0); }
       }
@@ -802,12 +956,15 @@
     function surfColor(pr, n, x, y, z, nx, ny, nz, info, sx, sy) {
       var best = 1e9, bp = null, bh = 0, i;
       for (i = 0; i < n; i++) {
-        var p = pr[LIST[i]], ax = x - p.ax, ay = y - p.ay, az = z - p.az;
-        var h = p.bb > 0 ? (ax * p.bx + ay * p.by + az * p.bz) / p.bb : 0;
-        h = h < 0 ? 0 : h > 1 ? 1 : h;
-        var dx = ax - p.bx * h, dy = ay - p.by * h, dz = az - p.bz * h;
-        var di = Math.sqrt(dx * dx + dy * dy + dz * dz) - (p.ra + (p.rb - p.ra) * h);
-        if (di < best) { best = di; bp = p; bh = h; }
+        var p = pr[LIST[i]], di = pdist(p, x, y, z);
+        if (di < best) { best = di; bp = p; bh = PH_H; }
+      }
+      /* Chapeau de sorcière : violet nuit, bande orange */
+      if (bp.id === ID_HAT || bp.id === ID_BRIM) {
+        var lam0 = nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2], rim0 = 1 - Math.max(0, (nx + ny + nz) * D3);
+        var v0 = 0.22 + 0.7 * (lam0 > 0 ? lam0 : 0) + 0.3 * rim0 * rim0 * rim0;
+        var hp = (bp.id === ID_HAT && bp.s0 === 0 && bh < 0.24) ? C_BAND : C_HAT;
+        return hp[Math.min(5, Math.max(0, Math.floor(v0 * 6)))];
       }
       /* Coordonnées locales au chat : le motif suit l'animal */
       /* Coordonnées attachées à chaque partie du corps : les taches suivent tous les mouvements */
@@ -1181,6 +1338,7 @@
     /* ================= Assemblage ================= */
     var bg = layer(), glass = layer(), vig = layer(), fg = layer();
     g = bg.getContext('2d'); drawRoom(); drawDesk(); drawRack(); drawPlant();
+    if (HW) { pumpkin(PUMPKINS[3]); pumpkin(PUMPKINS[0]); pumpkin(PUMPKINS[2]); candle(); drawHalloweenStatic(); }
     g = fg.getContext('2d'); drawChair();
     g = glass.getContext('2d'); drawGlass();
     g = vig.getContext('2d'); drawVignette();
@@ -1193,6 +1351,7 @@
       drawSky(ms);
       drawLeds(st);
       ctx.drawImage(glass, 0, 0);
+      if (HW) drawHalloweenDynamic(ms);
       drawMonitor(st);
       var contacts = [];
       if (Math.abs(st.q.z - KB_TOP) < 0.1) {

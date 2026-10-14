@@ -7,7 +7,8 @@
     "export": "node tools/export.js all",
     "export:banner": "node tools/export.js banner",
     "export:avatar": "node tools/export.js avatar",
-    "export:png": "node tools/export.js png"
+    "export:png": "node tools/export.js png",
+    "export:halloween": "node tools/export.js all --theme=halloween"
   },
   "devDependencies": {
     "canvas": "^2.11.2",

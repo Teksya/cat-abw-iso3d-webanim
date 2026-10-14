@@ -7,6 +7,9 @@ Tout tourne dans le navigateur avec un seul fichier JavaScript, sans dépendance
 | Bannière | Avatar |
 |---|---|
 | ![Bannière](exports/banniere.gif) | ![Avatar](exports/avatar.gif) |
+| ![Bannière Halloween](exports/banniere-halloween.gif) | ![Avatar Halloween](exports/avatar-halloween.gif) |
+
+Démo du thème Halloween : `index.html?theme=halloween`.
 
 ## Structure
 
@@ -48,7 +51,8 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 |---|---|
 | `preset` | `'banner'` (480×160, scénario de 23,5 s) ou `'avatar'` (128×128, 8 s) |
 | `autoplay` | `false` pour ne pas lancer l'animation (utile pour l'export) |
-| `cat` | surcharge l'apparence, par exemple `{ eyes: '#e0b040', flecksAmount: 0 }` |
+| `theme` | `'halloween'` : citrouilles qui vacillent, bougie, toiles d'araignée, guirlandes, chauves-souris, fantôme, lune orange et chapeau de sorcière |
+| `cat` | surcharge l'apparence, par exemple `{ eyes: '#e0b040', flecksAmount: 0, hat: true }` |
 | `width`, `height`, `K`, `OX`, `OY` | taille du canvas, zoom et cadrage (avancé) |
 
 `create` renvoie `{ frame(ms), start(), duration, canvas }`. `frame(ms)` dessine l'image à un instant donné de la boucle.
@@ -64,6 +68,7 @@ Tout se passe dans `src/cat-scene.js` :
 - **Poses** : section *Poses du chat* (`STAND`, `SLEEP`, `CROUCH`, `TAKEOFF`, `BELLY`, `SIT`...). Chaque pose est une liste de paramètres (hauteur du corps, courbure, position des pattes, queue, yeux, bouche, roulade...) et les animations passent de l'une à l'autre en douceur.
 - **Scénarios** : `PH_BANNER` et `PH_AVATAR`, deux listes de `[durée en ms, fonction]`. Chaque fonction reçoit l'avancement de l'étape (0 à 1) et renvoie la pose, la position et l'état de la baie et de l'écran.
 - **Décor** : `drawRoom`, `drawDesk`, `drawRack` (baie 12U), `drawChair`, `drawPlant`, `drawWindow`...
+- **Thèmes** : Halloween est dans la section *Halloween* (`PUMPKINS`, `drawHalloweenStatic`, `drawHalloweenDynamic`) et s'active avec `HW`. Pour un nouveau thème (Noël...), suivre le même modèle.
 
 ## Exporter en GIF
 
@@ -75,6 +80,7 @@ npm run export           # bannière + avatar en GIF, plus les PNG fixes
 npm run export:banner    # exports/banniere.gif (960×320)
 npm run export:avatar    # exports/avatar.gif (512×512)
 npm run export:png       # exports/avatar.png et exports/banniere.png
+npm run export:halloween # les mêmes fichiers en version Halloween (suffixe -halloween)
 ```
 
 Options : `node tools/export.js banner --fps=15 --scale=3`
