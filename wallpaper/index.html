@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatonne et baie serveur</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0d12; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; object-fit: cover; image-rendering: crisp-edges; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="wallpaper" role="img" aria-label="Fond d'écran animé : une chatonne vit sa vie dans un appartement"></canvas>
+<script src="cat-scene.js"></script>
+<script>
+  /* Réglages (modifiables dans Wallpaper Engine, voir project.json) */
+  var settings = { city: 'Saint-Étienne', weather: 'auto', interactive: true };
+  var scene = null, timer = null;
+
+  /* Météo réelle via Open-Meteo (gratuit, sans clé) : ville -> coordonnées -> météo actuelle */
+  function fetchWeather() {
+    if (settings.weather !== 'auto') { scene.setWeather(settings.weather); return; }
+    fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=fr&format=json&name=' + encodeURIComponent(settings.city))
+      .then(function (r) { return r.json(); })
+      .then(function (geo) {
+        if (!geo.results || !geo.results.length) throw new Error('ville introuvable');
+        var g = geo.results[0];
+        return fetch('https://api.open-meteo.com/v1/forecast?current=weather_code&latitude=' + g.latitude + '&longitude=' + g.longitude);
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { scene.setWeather(data.current.weather_code); })
+      .catch(function () { /* hors ligne ou ville inconnue : on garde la météo actuelle */ });
+  }
+
+  function start() {
+    scene = CatScene.create(document.getElementById('wallpaper'), { preset: 'wallpaper', interactive: settings.interactive });
+    fetchWeather();
+    timer = setInterval(fetchWeather, 20 * 60 * 1000);       // mise à jour toutes les 20 minutes
+  }
+
+  window.wallpaperPropertyListener = {
+    applyUserProperties: function (p) {
+      var refresh = false;
+      if (p.city) { settings.city = p.city.value; refresh = true; }
+      if (p.weather) { settings.weather = p.weather.value; refresh = true; }
+      if (p.interactive) settings.interactive = p.interactive.value;
+      if (scene && refresh) fetchWeather();
+    }
+  };
+  /* Laisse Wallpaper Engine envoyer les réglages avant de démarrer */
+  setTimeout(start, 50);
+</script>
+</body>
+</html>

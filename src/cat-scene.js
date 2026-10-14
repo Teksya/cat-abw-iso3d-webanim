@@ -10,30 +10,34 @@
 
   /* ================= Préréglages (cadrage + scénario) ================= */
   var PRESETS = {
-    banner: { width: 480, height: 160, K: 4, OX: 232, OY: 140, scenario: 'banner', vignette: 'banner', stillAt: 3000 },
-    avatar: { width: 128, height: 128, K: 12, OX: -236, OY: 260, scenario: 'avatar', vignette: 'avatar', stillAt: 4300 }
+    banner: { width: 960, height: 320, K: 8, OX: 464, OY: 280, scenario: 'banner', vignette: 'banner', stillAt: 3000 },
+    avatar: { width: 256, height: 256, K: 24, OX: -472, OY: 520, scenario: 'avatar', vignette: 'avatar', stillAt: 4300 },
+    wallpaper: { width: 960, height: 540, K: 8, OX: 464, OY: 360, scenario: 'live', vignette: 'wallpaper', room: 'large', stillAt: 3000, fps: 30 }
   };
 
   /* ================= Apparence de la chatonne (à faire évoluer) ================= */
   var CAT_STYLE = {
-    fur:      ['#070504', '#0f0b09', '#18120e', '#231a14', '#30241b', '#3f3024'],   // pelage principal, du plus sombre au plus clair
-    flecks:   ['#1f1813', '#2e241c', '#3f3227', '#524234', '#675443', '#7c6754'],   // mouchetures brun clair
-    earInner: '#8a5f55',
+    fur:      ['#030202', '#080605', '#0e0b09', '#15110e', '#221b16', '#342920'],   // pelage presque noir, avec un reflet brillant sur les parties éclairées
+    flecks:   ['#120e0b', '#1b1510', '#261d16', '#32261d', '#3f3025', '#4d3b2e'],   // mouchetures brunes discrètes
+    earInner: '#6b5650',
     eyes:     '#5fb8ad',      // yeux bleu-vert
     eyesHalf: '#4a9289',
     eyesShut: '#6a4a30',
     pupil:    '#100a06',
-    nose:     '#c47a6e',
+    nose:     '#4a3430',
     flecksAmount: 1,          // 0 = pelage uni, 1 = actuel, 2 = très moucheté
-    hat: false                // chapeau de sorcière (activé d'office avec le thème Halloween)
+    hat: false                // chapeau (sorcière à Halloween, père Noël à Noël)
   };
 
   function createScene(cv, options) {
     var opt = {}, k0;
     var base = PRESETS[(options && options.preset) || 'banner'];
     for (k0 in base) opt[k0] = base[k0];
+    if (options && options.quality === 'standard') { opt.width /= 2; opt.height /= 2; opt.K /= 2; opt.OX /= 2; opt.OY /= 2; }
     for (k0 in (options || {})) opt[k0] = options[k0];
     var HW = opt.theme === 'halloween';      // thème Halloween
+    var XM = opt.theme === 'noel';           // thème Noël
+    var LARGE = opt.room === 'large';        // grand appartement (fond d'écran)
     var STYLE = {};
     for (k0 in CAT_STYLE) STYLE[k0] = CAT_STYLE[k0];
     for (k0 in (opt.cat || {})) STYLE[k0] = opt.cat[k0];
@@ -64,6 +68,8 @@
 
     /* ================= Primitives de dessin ================= */
     function P(x, y, z) { return [OX + (x - y) * K, OY + ((x + y) / 2 - z) * K]; }
+
+    function shift(dx, dy, dz, fn) { var ox = OX, oy = OY; OX += (dx - dy) * K; OY += ((dx + dy) / 2 - dz) * K; fn(); OX = ox; OY = oy; }
 
     function fillPoly(pts, col) {
       g.fillStyle = col;
@@ -150,7 +156,7 @@
     var UH = 11.2 / 12;                              // hauteur d'un U
     function U(n) { return 1.35 + (n - 1) * UH; }    // bas du U n (1 = en bas)
 
-    var STARS = [], CITY = [], LEDS = [];
+    var STARS = [], CITY = [], LEDS = [], BLDG = [];
 
     /* ---------- Pièce ---------- */
     function drawRoom() {
@@ -165,9 +171,9 @@
       fillPoly([P(-19.5, 22, 0), P(-19.5, 34, 0), P(-8, 37, 0), P(-8, 25, 0)], 'rgba(140,170,235,0.07)');
 
       /* Murs */
-      qX(-20, -20, 70, 0, 50, '#232834');
-      qY(-20, -20, 70, 0, 50, '#2b3140');
-      line(P(-20, -20, 0), P(-20, -20, 50), '#1b1f28');
+      qX(-20, -20, 90, 0, 95, '#232834');
+      qY(-20, -20, 90, 0, 95, '#2b3140');
+      line(P(-20, -20, 0), P(-20, -20, 95), '#1b1f28');
       /* Plinthes */
       qX(-19.97, -20, 70, 0, 0.9, '#30364a'); line(P(-19.96, -20, 0.9), P(-19.96, 70, 0.9), '#3c4358');
       qY(-19.97, -20, 70, 0, 0.9, '#384054'); line(P(-20, -19.96, 0.9), P(70, -19.96, 0.9), '#454d63');
@@ -182,18 +188,19 @@
 
       drawWindow();
       drawCurtains();
-      drawPoster();
-      drawRadiator();
+      if (LARGE) { shift(0, 0, 5, drawPoster); shift(5, 0, 0, drawRadiator); } else { drawPoster(); drawRadiator(); }
       drawShelf();
 
       /* Prise murale et câble de la baie */
       qY(-19.95, 18.4, 19.6, 1.4, 2.6, '#5a5f6b'); px(P(18.8, -19.94, 2.1), '#1a1c20', 1); px(P(19.2, -19.94, 2.1), '#1a1c20', 1);
       line(P(16, -17.5, 0.15), P(18.9, -17.5, 0.15), '#0d0e10'); line(P(18.9, -17.5, 0.15), P(18.9, -19.9, 1.9), '#0d0e10');
 
-      /* Gamelle du chat */
-      cyl(-9, -15, 0, 0.6, 1.1, pal('#3f6d8a'), '#2b4d63');
-      flat(circle(-9, -15, 0.8), 0.55, '#5a3a22');
-      for (var k = 0; k < 6; k++) px(P(-9 + Math.cos(k) * 0.45, -15 + Math.sin(k * 2) * 0.45, 0.62), '#8a5a32', 1);
+      /* Gamelle du chat (et bol d'eau dans le grand appartement) */
+      var bx0 = LARGE ? -6 : -9, by0 = LARGE ? -14.2 : -15;
+      cyl(bx0, by0, 0, 0.6, 1.1, pal('#3f6d8a'), '#2b4d63');
+      flat(circle(bx0, by0, 0.8), 0.55, '#5a3a22');
+      for (var k = 0; k < 6; k++) px(P(bx0 + Math.cos(k) * 0.45, by0 + Math.sin(k * 2) * 0.45, 0.62), '#8a5a32', Math.max(1, Math.round(K / 6)));
+      if (LARGE) { cyl(-3.3, -15, 0, 0.6, 1.1, pal('#7a8a96'), '#5a6a76'); flat(circle(-3.3, -15, 0.8), 0.5, '#3d6f9a'); drawCatTree(); }
     }
 
     function drawWindow() {
@@ -211,9 +218,10 @@
       /* Étoiles (scintillent en dynamique) */
       for (var i = 0; i < 18; i++) STARS.push([22.6 + rnd() * 10.8, 24 + rnd() * 6.5, rnd() * 6]);
       /* Silhouette de la ville */
-      var bl = [[22.2, 23.7, 19.6], [23.7, 25.3, 22.1], [25.3, 26.3, 18.7], [26.3, 28.2, 23.6], [28.2, 29.3, 20.4], [29.3, 31.2, 22.6], [31.2, 32.3, 19.2], [32.3, 33.8, 21.2]];
+      var bl = BLDG = [[22.2, 23.7, 19.6], [23.7, 25.3, 22.1], [25.3, 26.3, 18.7], [26.3, 28.2, 23.6], [28.2, 29.3, 20.4], [29.3, 31.2, 22.6], [31.2, 32.3, 19.2], [32.3, 33.8, 21.2]];
       bl.forEach(function (bd, j) {
         qX(X + 0.01, bd[0], bd[1], 16.2, bd[2], j % 2 ? '#090d19' : '#0b1020');
+        if (XM) qX(X + 0.015, bd[0], bd[1], bd[2] - 0.35, bd[2], '#c9d3e2');
         for (var wy = bd[0] + 0.25; wy < bd[1] - 0.2; wy += 0.5) {
           for (var wz = 16.8; wz < bd[2] - 0.5; wz += 0.75) {
             var r = rnd();
@@ -496,6 +504,137 @@
       }
     }
 
+    /* ---------- Noël : sapin, cadeaux, chaussettes, neige ---------- */
+    var TREE = { x: -15.4, y: -15.8 }, TREE_LIGHTS = [], ORNAMENTS = [];
+    var TIERS = [[2.9, 1.2, 1.8, 6.6], [2.3, 0.85, 5.6, 9.8], [1.7, 0.12, 8.8, 13.2]];   // rayon bas, rayon haut, z bas, z haut
+    function giftBox(x0, y0, x1, y1, h, col, rib, z0) {
+      z0 = z0 || 0; var z1 = z0 + h;
+      box(x0, y0, z0, x1, y1, z1, pal(col));
+      var mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+      line(P(mx, y0, z1 + 0.01), P(mx, y1, z1 + 0.01), rib); line(P(x0, my, z1 + 0.01), P(x1, my, z1 + 0.01), rib);
+      line(P(x1 + 0.01, my, z0), P(x1 + 0.01, my, z1), rib); line(P(mx, y1 + 0.01, z0), P(mx, y1 + 0.01, z1), rib);
+      px(P(mx - 0.25, my + 0.25, z1 + 0.25), rib, Math.max(1, Math.round(K / 4))); px(P(mx + 0.25, my - 0.25, z1 + 0.25), rib, Math.max(1, Math.round(K / 4)));
+    }
+    function treeSurface(tier, ang, f) {
+      var T = TIERS[tier], r = (T[0] + (T[1] - T[0]) * f) * 0.97;
+      return [TREE.x + Math.cos(ang) * r, TREE.y + Math.sin(ang) * r, T[2] + (T[3] - T[2]) * f];
+    }
+    function drawTree() {
+      cyl(TREE.x, TREE.y, 0, 1.6, 1.25, pal('#8a1e1e'), '#2a1a12');
+      cyl(TREE.x, TREE.y, 1.4, 1.65, 1.32, pal('#c9a24a'), null);
+      cyl(TREE.x, TREE.y, 1.6, 2.2, 0.35, pal('#5a3a22'));
+      TIERS.forEach(function (T, i) {
+        loft(circle(TREE.x, TREE.y, T[0], 18), circle(TREE.x, TREE.y, T[1], 18), T[2], T[3], pal('#2f6b3e'), i === 2 ? undefined : null);
+        /* Bord du rang légèrement plus sombre et dentelé */
+        for (var k = 0; k < 18; k++) { var a = k / 18 * 6.2832; if (Math.cos(a) + Math.sin(a) > 0) px(P(TREE.x + Math.cos(a) * T[0], TREE.y + Math.sin(a) * T[0], T[2] - 0.15), '#1d4a2a', 1); }
+      });
+      var cols = ['#c9302c', '#e0b03a', '#3a7bd5', '#d9dde3'];
+      for (var n = 0; n < 16; n++) {
+        var tier = n % 3, ang = -0.6 + rnd() * 2.75, f = 0.12 + rnd() * 0.7;
+        ORNAMENTS.push([treeSurface(tier, ang, f), cols[n % 4]]);
+      }
+      for (n = 0; n < 26; n++) TREE_LIGHTS.push(treeSurface(n % 3, -0.7 + rnd() * 2.9, 0.08 + rnd() * 0.8));
+      ORNAMENTS.forEach(function (o) { px(P(o[0][0], o[0][1], o[0][2]), o[1], Math.max(2, Math.round(K / 2))); });
+      giftBox(-13.4, -15.2, -11.8, -13.6, 1.4, '#a8282a', '#e0b03a');
+      giftBox(-12.2, -18.4, -10.8, -17.0, 1.0, '#2f7a45', '#e6e6e6');
+      giftBox(-18.1, -13.4, -16.3, -12.0, 1.2, '#2c5aa8', '#e0b03a');
+    }
+    function stocking(x0) {
+      var Y = -17.35, top = 24.0;
+      fillPoly([P(x0 + 0.08, Y, top - 0.6), P(x0 + 0.82, Y, top - 0.6), P(x0 + 0.82, Y, top - 2.0), P(x0 + 1.55, Y, top - 2.2), P(x0 + 1.55, Y, top - 2.7), P(x0 + 0.3, Y, top - 2.75), P(x0 + 0.08, Y, top - 2.4)], '#b3262a');
+      qY(Y + 0.01, x0, x0 + 0.9, top - 0.65, top, '#e8ecf1');
+      line(P(x0 + 1.2, Y + 0.01, top - 2.2), P(x0 + 1.5, Y + 0.01, top - 2.5), '#e8ecf1');
+    }
+    function drawChristmasStatic() {
+      drawTree();
+      stocking(5.6); stocking(11.6);
+      garland([3.2, -17.2, 23.9], [16.8, -17.2, 23.9], 0.8, 11);
+      garland([-19.3, 19.3, 32.6], [-19.3, 36.7, 32.6], 0.9, 12);
+      /* Sur la baie : un cadeau et une bougie rouge (visibles sur l'avatar) */
+      giftBox(4.8, -19.3, 6.5, -17.6, 1.5, '#a8282a', '#e0b03a', RACK_TOP);
+      cyl(CANDLE.x, CANDLE.y, CANDLE.z, CANDLE.z + 1.1, 0.3, pal('#b3262a'), '#d9463c');
+      px(P(CANDLE.x + 0.35, CANDLE.y + 0.1, CANDLE.z + 0.15), '#2f6b3e', Math.max(1, Math.round(K / 4)));
+    }
+    var FLAKES = [];
+    for (var fl = 0; fl < 34; fl++) FLAKES.push([22.4 + rnd() * 11.2, rnd(), 2600 + rnd() * 2400, rnd() * 6]);
+    function drawChristmasDynamic(t) {
+      /* Neige derrière la vitre */
+      g.fillStyle = '#e9f0ff';
+      FLAKES.forEach(function (f) {
+        var z = 30.6 - ((t / f[2] + f[1]) % 1) * 14.2, y = f[0] + Math.sin(t / 700 + f[3]) * 0.35;
+        if (y < 22.3 || y > 33.7) return;
+        g.globalAlpha = 0.85; var q = P(-19.92, y, z); g.fillRect(Math.round(q[0]), Math.round(q[1]), 1, 1);
+      });
+      g.globalAlpha = 1;
+      /* Guirlandes chaudes */
+      var cols = ['#ffd27a', '#ff5a5a', '#7dff8a', '#6ab8ff'], e = Math.max(1, Math.round(K / 4));
+      BULBS.forEach(function (b, i) { px(P(b[0], b[1], b[2]), Math.sin(t / 420 + i * 1.3) > -0.4 ? cols[i % 4] : '#2a2620', e); });
+      /* Lumières du sapin + étoile */
+      TREE_LIGHTS.forEach(function (l, i) { if (Math.sin(t / 300 + i * 2.1) > -0.2) px(P(l[0], l[1], l[2]), i % 2 ? '#fff1b0' : '#ffd060', 1); });
+      var st = P(TREE.x, TREE.y, 13.6), tw = 0.8 + 0.2 * Math.sin(t / 250);
+      g.fillStyle = '#ffd84a';
+      g.fillRect(Math.round(st[0]) - 1, Math.round(st[1]) - 1, 3, 3); g.fillRect(Math.round(st[0]), Math.round(st[1]) - 3, 1, 7); g.fillRect(Math.round(st[0]) - 3, Math.round(st[1]), 7, 1);
+      glow(TREE.x, TREE.y, 13.6, 18, 'rgba(255,215,90,' + (0.18 * tw).toFixed(3) + ')');
+      glow(TREE.x, TREE.y, 7, 40, 'rgba(255,190,90,0.07)');
+      candleFlame(t);
+    }
+
+    /* ---------- Grand appartement : canapé, arbre à chat, banquette de fenêtre, carton ---------- */
+    var COUCH = pal('#4a6458'), FELT = pal('#8a7d6a'), SISAL = pal('#b59a6a'), KRAFT2 = pal('#a07a4a');
+    var BOX = { x0: -15.6, y0: 29.6, x1: -11.4, y1: 34.0, h: 3.8 };      // coin de la fenêtre
+    function drawCouch() {
+      /* Canapé scandinave : bas, fin, accoudoirs étroits, pieds en bois fuselés (on voit le sol dessous) */
+      var C1 = pal('#5f7a6a'), C2 = pal('#6b8877'), LEG = pal('#8a6440');
+      [[22.4, -19.4], [36.6, -19.4], [22.4, -14.8], [36.6, -14.8]].forEach(function (l) { loft(circle(l[0], l[1], 0.14, 8), circle(l[0], l[1], 0.22, 8), 0, 2.4, LEG); });
+      extrude(rrect(22, -19.8, 37, -14.4, 0.5), 2.4, 3.5, C1);                         // cadre fin
+      extrude(rrect(22, -19.8, 37, -19.0, 0.35), 3.5, 9.8, C1, C1[4]);                 // dossier fin
+      [22.9, 29.6].forEach(function (x) {                                               // coussins de dossier
+        loft(rrect(x, -19.05, x + 6.5, -18.2, 0.45), rrect(x, -19.15, x + 6.5, -18.55, 0.4), 5.2, 9.3, C2, C2[4]);
+      });
+      extrude(rrect(22, -19.8, 22.8, -14.4, 0.35), 3.5, 7.0, C1, C1[4]);               // accoudoir gauche
+      extrude(rrect(22.8, -18.3, 36.2, -14.3, 0.55), 3.5, 5.2, C2, C2[5]);             // assise d'un seul tenant
+      line(P(29.5, -18.2, 5.21), P(29.5, -14.4, 5.21), C2[2]);                          // couture
+      extrude(rrect(36.2, -19.8, 37, -14.4, 0.35), 3.5, 7.0, C1, C1[4]);               // accoudoir droit
+      loft(rrect(23.3, -18.0, 25.3, -17.2, 0.4), rrect(23.2, -18.3, 25.2, -17.6, 0.4), 5.2, 7.6, pal('#c9a24a'));   // coussin moutarde
+      /* Plaid crème plié sur l'accoudoir droit */
+      var PL = pal('#d9cfbd');
+      qZ(7.02, 35.9, 37.1, -18.6, -15.4, PL[4]);
+      fillPoly([P(37.1, -18.6, 7.0), P(37.1, -15.4, 7.0), P(37.1, -15.4, 4.4), P(37.1, -18.6, 4.2)], PL[2]);
+      line(P(37.12, -17.0, 6.9), P(37.12, -17.0, 4.4), PL[1]);
+    }
+    function drawCatTree() {
+      extrude(rrect(-19.6, -19.6, -11.8, -11.8, 0.8), 0, 0.8, FELT);
+      [[-17, -17, 0.7, 17.2], [-14, -14.5, 0.6, 9]].forEach(function (pp) {
+        cyl(pp[0], pp[1], 0.8, pp[3], pp[2], SISAL);
+        for (var z = 1.2; z < pp[3]; z += 0.5) line(P(pp[0] + pp[2] * 0.7, pp[1] + pp[2] * 0.7, z), P(pp[0] + pp[2] * 0.7, pp[1] + pp[2] * 0.7, z + 0.2), SISAL[1]);
+      });
+      extrude(rrect(-16.5, -17, -11.5, -12, 0.8), 9, 9.8, FELT);                       // plateforme
+      line(P(-12.5, -12.2, 9), P(-12.5, -12.2, 6.8), '#c9c2b3'); cyl(-12.5, -12.2, 6.2, 6.9, 0.35, pal('#c94f4f'));   // pompon qui pend
+      cyl(-17, -17, 17.2, 18.8, 2.4, FELT, null);                                        // panier du haut
+      flat(circle(-17, -17, 2.4), 18.8, FELT[5]);
+      flat(circle(-17, -17, 1.9), 18.81, '#5e5446');
+    }
+    function drawSill() {
+      box(-20, 22, 14, -16.6, 35, 15.2, WOOD);
+      extrude(rrect(-19.6, 23, -17, 29, 0.6), 15.2, 15.7, pal('#6f7f9a'));               // petit coussin
+    }
+    function drawBoxBack() {
+      var b = BOX, c = KRAFT2;
+      flat([[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]], 0.03, c[1]);
+      fillPoly([P(b.x0, b.y0, 0), P(b.x0, b.y1, 0), P(b.x0, b.y1, b.h), P(b.x0, b.y0, b.h)], c[3]);   // paroi du fond (vue de l'intérieur)
+      fillPoly([P(b.x0, b.y0, 0), P(b.x1, b.y0, 0), P(b.x1, b.y0, b.h), P(b.x0, b.y0, b.h)], c[2]);
+      fillPoly([P(b.x0, b.y0, b.h), P(b.x0, b.y1, b.h), P(b.x0 - 1.4, b.y1, b.h + 1.6), P(b.x0 - 1.4, b.y0, b.h + 1.6)], c[4]);   // rabats ouverts
+      fillPoly([P(b.x0, b.y0, b.h), P(b.x1, b.y0, b.h), P(b.x1, b.y0 - 1.4, b.h + 1.6), P(b.x0, b.y0 - 1.4, b.h + 1.6)], c[3]);
+    }
+    function drawBoxFront() {
+      var b = BOX, c = KRAFT2;
+      fillPoly([P(b.x1, b.y1, 0), P(b.x1, b.y0, 0), P(b.x1, b.y0, b.h), P(b.x1, b.y1, b.h)], c[1]);
+      fillPoly([P(b.x0, b.y1, 0), P(b.x1, b.y1, 0), P(b.x1, b.y1, b.h), P(b.x0, b.y1, b.h)], c[3]);
+      line(P(b.x0, b.y1, b.h), P(b.x1, b.y1, b.h), c[5]); line(P(b.x1, b.y1, b.h), P(b.x1, b.y0, b.h), c[5]);
+      fillPoly([P(b.x1, b.y1, b.h), P(b.x1, b.y0, b.h), P(b.x1 + 1.2, b.y0, b.h + 1.0), P(b.x1 + 1.2, b.y1, b.h + 1.0)], c[2]);
+      qY(b.y1 + 0.01, -14.9, -12.9, 1.1, 2.4, '#e6dccb'); line(P(-14.6, b.y1 + 0.02, 2.0), P(-13.2, b.y1 + 0.02, 2.0), '#b33a3a');   // étiquette
+    }
+
     /* ---------- Plante d'intérieur ---------- */
     function drawPlant() {
       var cx = -16.6, cy = 20.6;
@@ -641,10 +780,10 @@
     }
 
     function drawVignette() {
-      var gr = opt.vignette === 'avatar'
+      var gr = opt.vignette === 'wallpaper' ? g.createRadialGradient(W / 2, H * 0.5, H * 0.45, W / 2, H * 0.5, W * 0.62) : opt.vignette === 'avatar'
         ? g.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.72)
         : g.createRadialGradient(W / 2, H * 0.55, H * 0.6, W / 2, H * 0.55, W * 0.62);
-      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, HW ? 'rgba(28,6,40,0.6)' : 'rgba(0,0,0,0.5)');
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, HW ? 'rgba(28,6,40,0.6)' : XM ? 'rgba(4,14,34,0.55)' : 'rgba(0,0,0,0.5)');
       g.fillStyle = gr; g.fillRect(0, 0, W, H);
     }
 
@@ -676,7 +815,7 @@
         else if (l.kind === 'isp') col = l.i === 3 ? (Math.floor(t / 400) % 2 ? '#3ddc84' : '#1d5c36') : '#3ddc84';
         else if (l.kind === 'mini') col = '#e8f0ff';
         else col = '#3ddc84';
-        px(P(l.x, l.y !== undefined ? l.y : YE - 0.02, l.z), col, 1);
+        px(P(l.x, l.y !== undefined ? l.y : YE - 0.02, l.z), col, Math.max(1, Math.round(K / 6)));
       });
       var f0 = U(1) + 0.49, f1 = U(1) + 2 * UH - 0.49;
       if (st.power > 0.3 && !st.halting) {                         // écran de l'onduleur
@@ -775,10 +914,12 @@
     function fbm(x, y, z) { return vnoise(x, y, z); }
     var LIGHT = (function () { var v = [-0.3, 0.55, 0.78], l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; })();
     var CURL_SIGN = -1;
-    var ID_BODY = 0, ID_NECK = 1, ID_HEAD = 2, ID_CHEEK = 3, ID_MUZ = 4, ID_EAR = 5, ID_LEG = 6, ID_PAW = 7, ID_TAIL = 8, ID_HAT = 9, ID_BRIM = 10;
+    var ID_BODY = 0, ID_NECK = 1, ID_HEAD = 2, ID_CHEEK = 3, ID_MUZ = 4, ID_EAR = 5, ID_LEG = 6, ID_PAW = 7, ID_TAIL = 8, ID_HAT = 9, ID_BRIM = 10, ID_POM = 11;
     var C_HAT = ['#0e0814', '#170d20', '#22132f', '#2e1a3f', '#3c2451', '#4b2f63'].map(hex2rgb);
     var C_BAND = ['#3a1a06', '#5e2c0c', '#8a4214', '#b5591c', '#d77327', '#ef9140'].map(hex2rgb);
-    var HAT = HW || STYLE.hat;
+    var HAT = HW || XM || STYLE.hat;
+    var C_RED = ['#2a0606', '#4a0c0c', '#701515', '#982020', '#bd2e2a', '#d9463c'].map(hex2rgb);
+    var C_SNOW = ['#7c8794', '#9aa5b1', '#b9c2cc', '#d3dae1', '#e6ebf0', '#f5f8fb'].map(hex2rgb);
 
     function prim(a, b, ra, rb, k, id, ex) {
       var p = { ax: a[0], ay: a[1], az: a[2], bx: b[0] - a[0], by: b[1] - a[1], bz: b[2] - a[2], ra: ra, rb: rb, k: k, id: id };
@@ -795,8 +936,37 @@
       if (ex) for (var e in ex) p[e] = ex[e];
       return p;
     }
+    /* Triangle épais (oreille) : sommets a, b, c (c = pointe), épaisseur r */
+    function primTri(a, b, c, r, k, id, ex) {
+      var p = { tri: true, ax: a[0], ay: a[1], az: a[2], bx: 0, by: 0, bz: 0, bb: 0, ra: r, rb: r, k: k, id: id, A: a, B: b, C: c };
+      p.cx = (a[0] + b[0] + c[0]) / 3; p.cy = (a[1] + b[1] + c[1]) / 3; p.cz = (a[2] + b[2] + c[2]) / 3;
+      p.R = Math.max(vlen([a[0] - p.cx, a[1] - p.cy, a[2] - p.cz]), vlen([b[0] - p.cx, b[1] - p.cy, b[2] - p.cz]), vlen([c[0] - p.cx, c[1] - p.cy, c[2] - p.cz])) + r + k * 0.5 + 0.05;
+      if (ex) for (var e in ex) p[e] = ex[e];
+      return p;
+    }
+    function triDist(p, x, y, z) {
+      var a = p.A, b = p.B, c = p.C;
+      var bax = b[0] - a[0], bay = b[1] - a[1], baz = b[2] - a[2], pax = x - a[0], pay = y - a[1], paz = z - a[2];
+      var cbx = c[0] - b[0], cby = c[1] - b[1], cbz = c[2] - b[2], pbx = x - b[0], pby = y - b[1], pbz = z - b[2];
+      var acx = a[0] - c[0], acy = a[1] - c[1], acz = a[2] - c[2], pcx = x - c[0], pcy = y - c[1], pcz = z - c[2];
+      var nx = bay * acz - baz * acy, ny = baz * acx - bax * acz, nz = bax * acy - bay * acx;
+      function sg(v) { return v > 0 ? 1 : v < 0 ? -1 : 0; }
+      function crossDot(ux, uy, uz, qx, qy, qz) { return (uy * nz - uz * ny) * qx + (uz * nx - ux * nz) * qy + (ux * ny - uy * nx) * qz; }
+      var inside = sg(crossDot(bax, bay, baz, pax, pay, paz)) + sg(crossDot(cbx, cby, cbz, pbx, pby, pbz)) + sg(crossDot(acx, acy, acz, pcx, pcy, pcz)) >= 2;
+      var d2;
+      if (!inside) {
+        function seg(ux, uy, uz, qx, qy, qz) { var t = (ux * qx + uy * qy + uz * qz) / (ux * ux + uy * uy + uz * uz); t = t < 0 ? 0 : t > 1 ? 1 : t; var ex = ux * t - qx, ey = uy * t - qy, ez = uz * t - qz; return ex * ex + ey * ey + ez * ez; }
+        d2 = Math.min(seg(bax, bay, baz, pax, pay, paz), seg(cbx, cby, cbz, pbx, pby, pbz), seg(acx, acy, acz, pcx, pcy, pcz));
+      } else { var dn = nx * pax + ny * pay + nz * paz; d2 = dn * dn / (nx * nx + ny * ny + nz * nz); }
+      /* hauteur relative vers la pointe (pour assombrir le bout) */
+      var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, mz = (a[2] + b[2]) / 2, hx = c[0] - mx, hy = c[1] - my, hz = c[2] - mz;
+      var hh = ((x - mx) * hx + (y - my) * hy + (z - mz) * hz) / (hx * hx + hy * hy + hz * hz);
+      PH_H = hh < 0 ? 0 : hh > 1 ? 1 : hh;
+      return Math.sqrt(d2) - p.ra;
+    }
     var PH_H = 0;                                   // paramètre le long de la primitive (0 à 1), mis à jour par pdist
     function pdist(p, x, y, z) {
+      if (p.tri) return triDist(p, x, y, z);
       var ax = x - p.ax, ay = y - p.ay, az = z - p.az;
       if (p.cyl) {
         var t = ax * p.ux + ay * p.uy + az * p.uz, rx = ax - p.ux * t, ry = ay - p.uy * t, rz = az - p.uz * t;
@@ -814,7 +984,7 @@
     function vadd(a, b, s) { return [a[0] + b[0] * s, a[1] + b[1] * s, a[2] + b[2] * s]; }
     function vlen(a) { return Math.hypot(a[0], a[1], a[2]); }
     function vdot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-    var STD = { ax: 1, ay: 1, az: 1, bx: 1, by: 1, bz: 1, ra: 1, rb: 1, k: 1, id: 1, bb: 1, cx: 1, cy: 1, cz: 1, R: 1, cyl: 1, ux: 1, uy: 1, uz: 1, r: 1, hh: 1 };
+    var STD = { ax: 1, ay: 1, az: 1, bx: 1, by: 1, bz: 1, ra: 1, rb: 1, k: 1, id: 1, bb: 1, cx: 1, cy: 1, cz: 1, R: 1, cyl: 1, ux: 1, uy: 1, uz: 1, r: 1, hh: 1, tri: 1, A: 1, B: 1, C: 1 };
     /* Rotation d'un point autour d'un axe (Rodrigues) */
     function rotAxis(p, C, u, th) {
       var vx = p[0] - C[0], vy = p[1] - C[1], vz = p[2] - C[2], c = Math.cos(th), s = Math.sin(th), d = (u[0] * vx + u[1] * vy + u[2] * vz) * (1 - c);
@@ -851,20 +1021,43 @@
       var ch = pts[3], nd = [Math.cos(yE), Math.sin(yE), 0];
       var hc = [ch[0] + nd[0] * 1.2 + fH[0] * 0.15, ch[1] + nd[1] * 1.2 + fH[1] * 0.15, ch[2] + 0.95 + q.headLift];
       prims.push(prim(vadd(vadd(ch, nd, 0.3), [0, 0, 1], 0.2), hc, 0.72, 0.6, 0.35, ID_NECK, { fx: fH[0], fy: fH[1] }));
-      prims.push(prim(hc, hc, 1.0, 1.0, 0.3, ID_HEAD));
+      var hl0 = vadd(hc, sH, -0.2), hr0 = vadd(hc, sH, 0.2);
+      prims.push(prim(hl0, hr0, 0.93, 0.93, 0.3, ID_HEAD));               // crâne large (tête de chat, pas de rongeur)
       [-1, 1].forEach(function (s) {
-        var c = vadd(vadd(vadd(hc, sH, s * 0.42), upH, -0.28), fH, 0.18);
-        prims.push(prim(c, c, 0.66, 0.66, 0.25, ID_CHEEK));
+        var c = vadd(vadd(vadd(hc, sH, s * 0.52), upH, -0.32), fH, 0.2);
+        prims.push(prim(c, c, 0.6, 0.6, 0.25, ID_CHEEK));
       });
-      var mz2 = vadd(vadd(hc, fH, 0.85), upH, -0.33);
-      prims.push(prim(mz2, mz2, 0.38, 0.38, 0.2, ID_MUZ));
+      var mz2 = vadd(vadd(hc, fH, 0.7), upH, -0.34);                     // museau court, légèrement en avant
+      var br0 = vadd(vadd(hc, fH, 0.56), upH, 0.06), br1 = vadd(vadd(mz2, upH, 0.13), fH, 0.06);
+      prims.push(prim(br0, br1, 0.2, 0.17, 0.2, ID_MUZ));                  // arête du nez (relief entre les yeux et le nez)
+      [-1, 1].forEach(function (s) {                                       // arcades au-dessus des yeux
+        var bw = vadd(vadd(vadd(hc, fH, 0.58), sH, s * 0.42), upH, 0.32);
+        prims.push(prim(bw, bw, 0.28, 0.28, 0.25, ID_HEAD));
+      });
+      [-1, 1].forEach(function (s) {                                       // deux coussinets de moustaches
+        var wp = vadd(vadd(mz2, sH, s * 0.15), fH, 0.06);
+        prims.push(prim(wp, wp, 0.23, 0.23, 0.18, ID_MUZ));
+      });
+      var chin = vadd(vadd(mz2, upH, -0.2), fH, -0.04);
+      prims.push(prim(chin, chin, 0.17, 0.17, 0.15, ID_MUZ));
+      info.muzzle = mz2;
       var eb = q.earsBack;
       [-1, 1].forEach(function (s) {
-        var base = vadd(vadd(vadd(hc, upH, 0.62), sH, s * 0.5), fH, -0.05);
-        var tip = vadd(vadd(vadd(hc, upH, 1.5 - 0.45 * eb), sH, s * (0.76 + 0.3 * eb)), fH, -(0.15 + 0.5 * eb));
-        prims.push(prim(base, tip, 0.38, 0.05, 0.1, ID_EAR));
+        /* Oreille plate et pointue : base large sur le crâne, pointe vers le haut */
+        var b1 = vadd(vadd(vadd(hc, upH, 0.72), sH, s * 0.28), fH, 0.02);
+        var b2 = vadd(vadd(vadd(hc, upH, 0.5), sH, s * 0.9), fH, -0.06);
+        var tp = vadd(vadd(vadd(hc, upH, 1.48 - 0.5 * eb), sH, s * (0.8 + 0.3 * eb)), fH, -(0.1 + 0.5 * eb));
+        prims.push(primTri(b1, b2, tp, 0.1, 0.08, ID_EAR));
       });
-      if (HAT) {                                    // chapeau de sorcière légèrement penché
+      if (HAT && XM) {                              // bonnet de père Noël qui retombe sur le côté
+        var sx0 = vadd(vadd(upH, fH, -0.25), sH, 0.1), sl = vlen(sx0); sx0 = [sx0[0] / sl, sx0[1] / sl, sx0[2] / sl];
+        var sb = vadd(vadd(hc, upH, 0.78), fH, -0.08);
+        prims.push(primCyl(sb, sx0, 0.98, 0.14, 0.06, ID_BRIM));
+        var s1 = vadd(sb, sx0, 0.75), s2 = vadd(vadd(vadd(sb, sx0, 1.05), fH, -0.5), sH, 0.35);
+        prims.push(prim(vadd(sb, sx0, 0.1), s1, 0.62, 0.36, 0.05, ID_HAT, { s0: 0 }));
+        prims.push(prim(s1, s2, 0.36, 0.12, 0.05, ID_HAT, { s0: 1 }));
+        prims.push(prim(s2, s2, 0.24, 0.24, 0.05, ID_POM));
+      } else if (HAT) {                             // chapeau de sorcière légèrement penché
         var hx = vadd(vadd(upH, fH, -0.22), sH, 0.14), hl = vlen(hx); hx = [hx[0] / hl, hx[1] / hl, hx[2] / hl];
         var hb = vadd(vadd(hc, upH, 0.82), fH, -0.08);
         prims.push(primCyl(hb, hx, 1.08, 0.05, 0.04, ID_BRIM));
@@ -873,9 +1066,9 @@
         prims.push(prim(m1, tipH, 0.3, 0.06, 0.04, ID_HAT, { s0: 1 }));
       }
       info.head = hc; info.fH = fH; info.sH = sH; info.upH = upH;
-      info.eyes = [-1, 1].map(function (s) { return vadd(vadd(vadd(hc, fH, 0.88), sH, s * 0.4), upH, 0.16); });
-      info.nose = vadd(vadd(hc, fH, 1.2), upH, -0.14);
-      info.mouth = vadd(vadd(hc, fH, 1.08), upH, -0.48);
+      info.eyes = [-1, 1].map(function (s) { return vadd(vadd(vadd(hc, fH, 0.86), sH, s * 0.44), upH, 0.08); });
+      info.nose = vadd(vadd(hc, fH, 1.02), upH, -0.19);
+      info.mouth = vadd(vadd(hc, fH, 0.96), upH, -0.47);
 
       /* Pattes : cinématique inverse à 2 os */
       [[1, 1, 0.5 * Math.PI], [1, -1, 1.5 * Math.PI], [0, 1, 0], [0, -1, Math.PI]].forEach(function (lg) {
@@ -891,7 +1084,7 @@
         var T0 = vadd([J[0], J[1], q.z + 0.3], f, front ? 0.75 : 0.95);
         var A = vadd(vadd(J, f, reach), [0, 0, 1], -(front ? q.frontDrop : q.backDrop));
         var T = [0, 1, 2].map(function (k) { var v = G[k] + (T0[k] - G[k]) * tk; return v + (A[k] - v) * q.air; });
-        var a = front ? 1.0 : 1.1, b = front ? 1.0 : 1.15;
+        var a = front ? 1.12 : 1.2, b = front ? 1.12 : 1.28;
         var v = [T[0] - J[0], T[1] - J[1], T[2] - J[2]], d = vlen(v);
         if (d > a + b - 0.02) { T = vadd(J, v, (a + b - 0.02) / d); d = a + b - 0.02; v = [T[0] - J[0], T[1] - J[1], T[2] - J[2]]; }
         var knee = T;
@@ -911,6 +1104,7 @@
         var C = [(pts[0][0] + pts[3][0]) / 2, (pts[0][1] + pts[3][1]) / 2, q.z + q.bodyZ], U = [Math.cos(q.h), Math.sin(q.h), 0];
         var rp = function (p) { return rotAxis(p, C, U, q.roll); }, rv = function (v) { return rotAxis(v, [0, 0, 0], U, q.roll); };
         prims = prims.map(function (p) {
+          if (p.tri) { var ta = rp(p.A), tb = rp(p.B), tc = rp(p.C); return primTri(ta, tb, tc, p.ra, p.k, p.id); }
           if (p.cyl) { var cc = rp([p.ax, p.ay, p.az]); if (cc[2] < q.z + 0.15) cc[2] = q.z + 0.15; return primCyl(cc, rv([p.ux, p.uy, p.uz]), p.r, p.hh, p.k, p.id); }
           var A = rp([p.ax, p.ay, p.az]), B = rp([p.ax + p.bx, p.ay + p.by, p.az + p.bz]);
           if (A[2] < q.z + p.ra * 0.6) A[2] = q.z + p.ra * 0.6;
@@ -919,14 +1113,14 @@
           return prim(A, B, p.ra, p.rb, p.k, p.id, ex);
         });
         info.spine = info.spine.map(rp); info.head = rp(info.head); info.eyes = info.eyes.map(rp);
-        info.nose = rp(info.nose); info.mouth = rp(info.mouth); info.paws = info.paws.map(rp);
+        info.nose = rp(info.nose); info.mouth = rp(info.mouth); info.muzzle = rp(info.muzzle); info.paws = info.paws.map(rp);
         info.fH = rv(info.fH); info.sH = rv(info.sH); info.upH = rv(info.upH);
         info.rollC = C; info.rollU = U; info.roll = q.roll; info.bodyUp = rv([0, 0, 1]);
       }
 
       /* Queue : chaîne de segments (balancement, enroulement) */
       var hip = pts[0], ty = yaws[0] + Math.PI, prev = [hip[0] - Math.cos(yaws[0]) * 0.85, hip[1] - Math.sin(yaws[0]) * 0.85, hip[2] + 0.15];
-      var tr = [0.3, 0.3, 0.29, 0.28, 0.27, 0.25, 0.23, 0.2], L = 0;
+      var tr = [0.38, 0.42, 0.43, 0.42, 0.4, 0.37, 0.33, 0.27], L = 0;
       for (i = 0; i < 7; i++) {
         ty += -CURL_SIGN * q.tailWrap * 0.38 + Math.sin(t / 430 * q.swayF + i * 0.65) * 0.06 * i * q.sway / 4;
         var tp = (q.tailUp + i * q.tailCurl * 0.22) * (1 - q.tailWrap) + (-0.06) * q.tailWrap;
@@ -960,10 +1154,11 @@
         if (di < best) { best = di; bp = p; bh = PH_H; }
       }
       /* Chapeau de sorcière : violet nuit, bande orange */
-      if (bp.id === ID_HAT || bp.id === ID_BRIM) {
+      if (bp.id === ID_HAT || bp.id === ID_BRIM || bp.id === ID_POM) {
         var lam0 = nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2], rim0 = 1 - Math.max(0, (nx + ny + nz) * D3);
         var v0 = 0.22 + 0.7 * (lam0 > 0 ? lam0 : 0) + 0.3 * rim0 * rim0 * rim0;
-        var hp = (bp.id === ID_HAT && bp.s0 === 0 && bh < 0.24) ? C_BAND : C_HAT;
+        if (XM) v0 += (hash3(Math.floor(x * 9), Math.floor(y * 9), Math.floor(z * 9)) - 0.5) * (bp.id === ID_HAT ? 0.06 : 0.18);   // fourrure
+        var hp = XM ? (bp.id === ID_HAT ? C_RED : C_SNOW) : (bp.id === ID_HAT && bp.s0 === 0 && bh < 0.24) ? C_BAND : C_HAT;
         return hp[Math.min(5, Math.max(0, Math.floor(v0 * 6)))];
       }
       /* Coordonnées locales au chat : le motif suit l'animal */
@@ -990,7 +1185,7 @@
       }
       var noise = fbm(lx * 1.6 + 3.1, ly * 1.6 + 7.3, lz * 1.6);
       var pix = hash3(Math.floor(lx * 4.5), Math.floor(ly * 4.5), Math.floor(lz * 4.5));
-      var palt = C_DK, shift = 0;
+      var palt = C_DK, shift = 0, earLift = false;
       var fa = STYLE.flecksAmount;
       if (fa > 0 && noise > 1 - 0.22 * fa && pix > 0.35) palt = C_OR;           // petites taches
       else if (fa > 0 && noise > 1 - 0.38 * fa && pix > 0.72) palt = C_OR;      // mouchetures fines
@@ -1000,12 +1195,11 @@
       switch (bp.id) {
         case ID_HEAD: case ID_MUZ: case ID_CHEEK:
           var sd = (x - info.head[0]) * info.sH[0] + (y - info.head[1]) * info.sH[1];
-          if (fw > 0.3 && Math.abs(sd) < 0.13 && up > -0.3) palt = C_OR;          // liseré roux sur le nez
-          if (bp.id === ID_MUZ && up < -0.4 && pix > 0.55) palt = C_OR;           // menton un peu plus clair
+          if (palt === C_OR && fw > 0.2) palt = C_DK;                             // face bien sombre
           break;
         case ID_EAR:
-          if (bh > 0.6) palt = C_DK, shift = 1;
-          if (fw > 0.35 && bh < 0.75) return C_PK.map(function (c) { return c * 0.9; });
+          palt = C_DK; earLift = true;
+          if (fw > 0.35 && bh < 0.6) { var li = 0.45 + 0.55 * Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]); return C_PK.map(function (c) { return c * li; }); }
           break;
         case ID_PAW:
           palt = C_DK;
@@ -1015,13 +1209,14 @@
       }
       var lam = nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2];
       var rim = 1 - Math.max(0, (nx + ny + nz) * D3);
-      var v = 0.2 + 0.72 * (lam > 0 ? lam : 0) + 0.32 * rim * rim * rim + (hash3(Math.floor(lx * 9), Math.floor(ly * 9), Math.floor(lz * 9) + 7) - 0.5) * 0.06;   // + reflet de bord + texture de poil
+      var v = 0.14 + 0.82 * (lam > 0 ? lam : 0) + 0.4 * rim * rim * rim + (hash3(Math.floor(lx * 9), Math.floor(ly * 9), Math.floor(lz * 9) + 7) - 0.5) * 0.06;   // + reflet de bord + texture de poil
+      if (earLift) v = 0.3 + 0.7 * v;                                           // dos de l'oreille jamais noir (sinon on lit un trou)
       var idx = Math.min(5, Math.max(0, Math.floor(v * 6) - shift));
       return palt[idx];
     }
 
     /* ---- Rendu par lancer de rayons (caméra orthographique le long de (1,1,1)) ---- */
-    var CW = 200, CHh = 150;
+    var CW = 420, CHh = 320;
     var catCv = document.createElement('canvas'); catCv.width = CW; catCv.height = CHh;
     var catCtx = catCv.getContext('2d');
     var SB = new Float32Array(CW * CHh), MK = new Uint8Array(CW * CHh);
@@ -1100,14 +1295,70 @@
       if (inf.fH[0] + inf.fH[1] + inf.fH[2] < -0.5) return;
       inf.eyes.forEach(function (e) {
         var v = vis(e); if (!v) return;
-        if (q.eyes > 0.6) { ctx.fillStyle = STYLE.eyes; ctx.fillRect(v[0] - E + 1, v[1] - E, E, 2 * E); ctx.fillStyle = STYLE.pupil; ctx.fillRect(v[0] - E + 1 + (E > 1 ? 1 : 0), v[1] - E + (E > 1 ? 1 : E), Math.max(1, E - 1), E); }
-        else if (q.eyes > 0.25) { ctx.fillStyle = STYLE.eyesHalf; ctx.fillRect(v[0] - E + 1, v[1], E, E); }
-        else { ctx.fillStyle = STYLE.eyesShut; ctx.fillRect(v[0] - E, v[1], 2 * E, Math.max(1, E - 1)); }
+        var ew = E > 1 ? 2 * E : 2, eh = E > 1 ? 2 * E - 1 : 1, ex = v[0] - (ew >> 1), ey = v[1] - (eh >> 1);
+        if (q.eyes > 0.6) {
+          if (E > 1) {                                              // œil en amande tracé dans le plan du visage
+            var ep = function (a, b) { var r = vadd(vadd(vadd(e, inf.sH, a), inf.upH, b), inf.fH, 0.03); return P(r[0], r[1], r[2]); };
+            var ring = function (w, h, n) { var o = []; for (var k = 0; k < n; k++) { var t = k / n * 6.2832, c = Math.cos(t); o.push(ep(c * w, Math.sin(t) * h * (1 - 0.18 * c * c))); } return o; };
+            fillPoly(ring(0.235, 0.17, 22), STYLE.pupil);           // contour
+            fillPoly(ring(0.2, 0.14, 22), STYLE.eyes);             // iris
+            fillPoly(ring(0.05, 0.125, 12), STYLE.pupil);             // pupille fendue
+            var hl = ep(-0.09, 0.06); ctx.fillStyle = '#eafffb'; ctx.fillRect(Math.round(hl[0]), Math.round(hl[1]), Math.max(1, E >> 2), Math.max(1, E >> 2));
+          } else { ctx.fillStyle = STYLE.eyes; ctx.fillRect(ex, ey, ew, eh); }
+        }
+        else {
+          /* Paupières en 3D : petit arc qui suit l'orientation de la tête (et plus un rectangle à l'écran) */
+          var hw = 0.17, half = q.eyes > 0.25;
+          var A = vadd(vadd(e, inf.sH, -hw), inf.upH, 0.03), M = vadd(e, inf.upH, half ? 0.0 : -0.05), B = vadd(vadd(e, inf.sH, hw), inf.upH, 0.03);
+          var pa = P(A[0], A[1], A[2]), pm = P(M[0], M[1], M[2]), pb = P(B[0], B[1], B[2]);
+          if (half) {                                              // mi-clos : un trait de couleur sous la paupière
+            var off = Math.max(1, E >> 1);
+            line([pa[0], pa[1] + off], [pm[0], pm[1] + off], STYLE.eyesHalf); line([pm[0], pm[1] + off], [pb[0], pb[1] + off], STYLE.eyesHalf);
+          }
+          for (var th = 0; th < (E > 2 ? 2 : 1); th++) {
+            line([pa[0], pa[1] + th], [pm[0], pm[1] + th], STYLE.eyesShut); line([pm[0], pm[1] + th], [pb[0], pb[1] + th], STYLE.eyesShut);
+          }
+        }
       });
-      var ns = vis(inf.nose); if (ns) { ctx.fillStyle = STYLE.nose; ctx.fillRect(ns[0], ns[1], E, E); }
+      var ns = vis(inf.nose);
+      if (ns) {
+        var nv = function (a, b) { var r = vadd(vadd(inf.nose, inf.sH, a), inf.upH, b); return P(r[0], r[1], r[2]); };
+        if (E > 1) {
+          fillPoly([nv(-0.1, 0.05), nv(0.1, 0.05), nv(0, -0.07)], STYLE.nose);            // nez triangulaire
+          var mc = '#2c211c';                                                                // bouche : petit trait puis deux arcs
+          line(nv(0, -0.07), nv(0, -0.15), mc);
+          line(nv(0, -0.15), nv(-0.07, -0.19), mc); line(nv(-0.07, -0.19), nv(-0.14, -0.15), mc);
+          line(nv(0, -0.15), nv(0.07, -0.19), mc); line(nv(0.07, -0.19), nv(0.14, -0.15), mc);
+          ctx.fillStyle = '#3a2d26';                                                         // points des moustaches
+          [-1, 1].forEach(function (s) { [[0.13, -0.08], [0.2, -0.12], [0.15, -0.16]].forEach(function (d) { var q = nv(s * d[0], d[1]); ctx.fillRect(Math.round(q[0]), Math.round(q[1]), 1, 1); }); });
+        } else { ctx.fillStyle = STYLE.nose; ctx.fillRect(ns[0], ns[1], 1, 1); }
+      }
+      /* Moustaches : 3 de chaque côté, partent du museau */
+      if (inf.muzzle) {
+        var big = K >= 8, wl = big ? 1.15 : 0.8;
+        ctx.globalAlpha = big ? 0.32 : 0.22;
+        [-1, 1].forEach(function (s) {
+          var o = vadd(vadd(inf.muzzle, inf.sH, s * 0.28), inf.fH, 0.12);
+          if (!vis(vadd(inf.muzzle, inf.fH, 0.3))) return;
+          [0.18, 0, -0.18].forEach(function (u) {
+            var e = vadd(vadd(vadd(o, inf.sH, s * wl), inf.fH, 0.25 * wl), inf.upH, u);
+            var a = P(o[0], o[1], o[2]), b = P(e[0], e[1], e[2]);
+            line(a, b, '#b9b2a8');
+          });
+        });
+        ctx.globalAlpha = 1;
+      }
       if (q.mouth > 0.3) {
         var mo = vis(inf.mouth);
-        if (mo) { ctx.fillStyle = '#4a1418'; ctx.fillRect(mo[0] - E, mo[1] - E, 2 * E, E * (1 + Math.round(q.mouth))); ctx.fillStyle = '#e08e99'; ctx.fillRect(mo[0] - E, mo[1] + E * Math.round(q.mouth) - (E > 1 ? 1 : 0), E, E); }
+        if (mo) {
+          var mp = function (a, b) { var r = vadd(vadd(vadd(inf.mouth, inf.sH, a), inf.upH, b), inf.fH, 0.08); return P(r[0], r[1], r[2]); };
+          var ow = 0.2, oh = 0.08 + 0.2 * q.mouth, rimPts = [], inPts = [], tongue = [];
+          for (var k = 0; k < 16; k++) { var t = k / 16 * 6.2832; rimPts.push(mp(Math.cos(t) * ow, Math.sin(t) * oh)); inPts.push(mp(Math.cos(t) * ow * 0.78, Math.sin(t) * oh * 0.75)); }
+          fillPoly(rimPts, '#1a0d0c'); fillPoly(inPts, '#5a1c22');
+          for (k = 0; k < 10; k++) { var t2 = Math.PI + k / 9 * Math.PI; tongue.push(mp(Math.cos(t2) * ow * 0.55, -oh * 0.25 + Math.sin(t2) * oh * 0.55)); }
+          fillPoly(tongue, '#d77a88');
+          if (E > 1) { ctx.fillStyle = '#eee8dc'; [-1, 1].forEach(function (s) { var f = mp(s * ow * 0.55, oh * 0.6); ctx.fillRect(Math.round(f[0]), Math.round(f[1]), 1, 2); }); }   // petits crocs
+        }
       }
     }
 
@@ -1153,7 +1404,7 @@
     }
 
     /* ================= Poses du chat ================= */
-    var BASE = { bodyZ: 2.35, pitch: 0, curl: 0, stretch: 1, headLift: 0.45, headPitch: 0, headYaw: 0,
+    var BASE = { bodyZ: 2.6, pitch: 0, curl: 0, stretch: 1, headLift: 0.45, headPitch: 0, headYaw: 0,
       frontReach: 0, backReach: 0, frontLift: 0, backLift: 0, frontTuck: 0, backTuck: 0, air: 0, frontDrop: 1.6, backDrop: 1.6,
       tailUp: 1.1, tailCurl: 0.35, tailWrap: 0, sway: 1, swayF: 1, eyes: 1, mouth: 0, earsBack: 0, walk: 0, breath: 0, roll: 0 };
     function pose(o, from) { var r = {}, k; for (k in BASE) r[k] = (from || BASE)[k]; for (k in o) r[k] = o[k]; return r; }
@@ -1161,7 +1412,7 @@
 
     var STAND = pose({});
     var WALK = pose({ walk: 1, headLift: 0.35 });
-    var SLEEP = pose({ bodyZ: 0.95, curl: 1, headLift: -0.5, headPitch: -0.25, headYaw: 0.6, frontTuck: 1, backTuck: 1, tailUp: -0.1, tailCurl: 0, tailWrap: 1, sway: 0.25, swayF: 0.6, eyes: 0, breath: 1 });
+    var SLEEP = pose({ bodyZ: 0.95, curl: 1, headLift: -0.12, headPitch: -0.22, headYaw: 0.75, earsBack: 0.6, frontTuck: 1, backTuck: 1, tailUp: -0.1, tailCurl: 0, tailWrap: 1, sway: 0.25, swayF: 0.6, eyes: 0, breath: 1 });
     var AWAKE = pose({ curl: 0.8, headLift: 0.25, headPitch: 0.1, headYaw: 1.1, tailWrap: 0.9, sway: 0.5, eyes: 1 }, SLEEP);
     var YAWN = pose({ mouth: 1, eyes: 0, headPitch: 0.55, earsBack: 0.45 }, AWAKE);
     var LIE = pose({ bodyZ: 1.0, headLift: 0.45, frontTuck: 1, backTuck: 1, tailUp: -0.05, tailCurl: 0.05, tailWrap: 0.5, sway: 0.5, breath: 1 });
@@ -1194,8 +1445,8 @@
     function at(q, x, y, z, h, wp) { q.x = x; q.y = y; q.z = z; q.h = h; q.walkPh = wp || 0; return q; }
 
     /* Saut balistique de S à E : poussée, regroupé en l'air, pattes avant tendues à la réception */
-    function leap(S, Sz, E, Ez, p) {
-      var dz = Ez - Sz, d = dist(S, E), a = Math.max((Math.abs(dz) + 2) / 4, d * 0.12);
+    function leap(S, Sz, E, Ez, p, minA) {
+      var dz = Ez - Sz, d = dist(S, E), a = Math.max((Math.abs(dz) + 2) / 4, d * 0.12, minA || 0);
       var z = Sz + dz * p + 4 * a * p * (1 - p), vz = dz + 4 * a * (1 - 2 * p);
       var q;
       if (p < 0.12) q = mixP(CROUCH, TAKEOFF, eo(p / 0.12));
@@ -1322,6 +1573,529 @@
       [1100, function (p) { var q = mixP(LOOK, SLEEP, eio(p)); q.eyes = 1 - ss(0.1, 0.55, p); return { q: sp(q), zzz: ss(0.8, 1, p) }; }]
     ];
     var PH = opt.scenario === 'avatar' ? PH_AVATAR : PH_BANNER;
+
+    /* Heure du jour : réelle, ou simulée (opt.hour + accélération opt.timeScale) pour les exports */
+    function timeOfDay(ms) {
+      if (opt.hour !== undefined) return ((opt.hour + ms / 3600000 * (opt.timeScale || 1)) % 24 + 24) % 24;
+      var d = new Date(); return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+    }
+
+    /* ================= Jour et nuit (fond d'écran) ================= */
+    function hexMix(a, b, t) { var A = hex2rgb(a), B = hex2rgb(b); return rgb2hex([0, 1, 2].map(function (i) { return A[i] + (B[i] - A[i]) * t; })); }
+    var SKY_KEYS = [[0, '#0c1328', '#202f58'], [5.5, '#141c3a', '#34375f'], [6.6, '#3a4f86', '#f2a46a'], [8, '#5b8fd1', '#bfe0f2'],
+                    [12, '#4f8fe0', '#a9d6f5'], [17, '#5c8ed0', '#c9dcef'], [19.2, '#4a4f8e', '#f09060'], [20.6, '#1b2147', '#4a3f6a'], [22, '#0c1328', '#202f58'], [24, '#0c1328', '#202f58']];
+    function skyAt(h) {
+      for (var i = 0; i < SKY_KEYS.length - 1; i++) {
+        var a = SKY_KEYS[i], b = SKY_KEYS[i + 1];
+        if (h >= a[0] && h <= b[0]) { var t = (h - a[0]) / (b[0] - a[0]); return [hexMix(a[1], b[1], t), hexMix(a[2], b[2], t)]; }
+      }
+      return [SKY_KEYS[0][1], SKY_KEYS[0][2]];
+    }
+    function daylight(h) { return ss(6.2, 8.2, h) * (1 - ss(18.3, 20.6, h)); }
+    function duskGlow(h) { return Math.max(tri((h - 5.9) / 2.4), tri((h - 18.2) / 2.6)); }
+    /* Position du soleil : hauteur (rad) et dérive latérale de la tache de lumière */
+    function sunAt(h) { var k = (h - 7) / 12; if (k <= 0 || k >= 1) return null; return { el: 0.3 + 0.55 * Math.sin(Math.PI * k), drift: Math.cos(Math.PI * k) * 0.55, k: k }; }
+
+    /* ================= Météo ================= */
+    var WX = { cloud: 0.1, rain: 0, snow: 0, storm: 0, fog: 0 }, WXT = { cloud: 0.1, rain: 0, snow: 0, storm: 0, fog: 0 };
+    var WX_PRESETS = {
+      clear: { cloud: 0.05, rain: 0, snow: 0, storm: 0, fog: 0 }, partly: { cloud: 0.4, rain: 0, snow: 0, storm: 0, fog: 0 },
+      cloudy: { cloud: 0.9, rain: 0, snow: 0, storm: 0, fog: 0 }, fog: { cloud: 0.9, rain: 0, snow: 0, storm: 0, fog: 1 },
+      drizzle: { cloud: 0.9, rain: 0.35, snow: 0, storm: 0, fog: 0 }, rain: { cloud: 0.95, rain: 0.75, snow: 0, storm: 0, fog: 0 },
+      snow: { cloud: 0.9, rain: 0, snow: 0.8, storm: 0, fog: 0 }, storm: { cloud: 1, rain: 1, snow: 0, storm: 1, fog: 0 }
+    };
+    /* Code météo WMO (celui d'Open-Meteo) vers un état */
+    function wxFromCode(c) {
+      if (c === 0) return 'clear'; if (c <= 2) return 'partly'; if (c === 3) return 'cloudy'; if (c === 45 || c === 48) return 'fog';
+      if (c >= 51 && c <= 57) return 'drizzle'; if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return 'rain';
+      if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow'; if (c >= 95) return 'storm'; return 'partly';
+    }
+    function setWeather(w) {
+      var pr = typeof w === 'number' ? WX_PRESETS[wxFromCode(w)] : WX_PRESETS[w] || WX_PRESETS.clear;
+      for (var k in pr) WXT[k] = pr[k];
+    }
+    if (opt.weather) { setWeather(opt.weather); for (var k1 in WXT) WX[k1] = WXT[k1]; }
+    var lastWxMs = 0, flash = 0, nextFlash = 4000, RAIN = [], DROPS = [];
+    for (var ri = 0; ri < 70; ri++) RAIN.push([22.3 + rnd() * 11.4, rnd(), 0.8 + rnd() * 0.5]);
+    for (ri = 0; ri < 26; ri++) DROPS.push([22.6 + rnd() * 10.8, 16.8 + rnd() * 13.5, rnd(), 0.3 + rnd()]);
+    function updateWeather(ms) {
+      var dt = Math.min(200, ms - lastWxMs); lastWxMs = ms;
+      for (var k in WX) WX[k] += (WXT[k] - WX[k]) * Math.min(1, dt / 4000);   // transitions douces
+      flash = Math.max(0, flash - dt / 220);
+      if (WX.storm > 0.5 && ms > nextFlash) { flash = 1; nextFlash = ms + 5000 + rnd() * 9000; }
+    }
+
+    function drawSkyLive(h, t) {
+      var X = -19.95, sky = skyAt(h), dl = daylight(h), n = 10, cl = WX.cloud;
+      var gray = [hexMix('#151820', '#6b7280', dl), hexMix('#1c2029', '#8a909b', dl)];
+      if (WX.storm > 0.3) gray = [hexMix(gray[0], '#2a2e38', 0.5), hexMix(gray[1], '#3a3f4a', 0.5)];
+      for (var b = 0; b < n; b++) {
+        var z1 = 30.8 - b * (14.6 / n), z0 = z1 - 14.6 / n, f = b / (n - 1);
+        qX(X, 22.2, 33.8, z0, z1, hexMix(hexMix(sky[0], sky[1], f), hexMix(gray[0], gray[1], f), Math.min(1, cl * 0.85)));
+      }
+      if (dl < 0.6 && cl < 0.85) {                                             // étoiles et lune
+        g.globalAlpha = (1 - dl / 0.6) * (1 - cl / 0.85);
+        STARS.forEach(function (st2) { if (0.5 + 0.5 * Math.sin(t / 650 + st2[2] * 3) > 0.3) px(P(-19.93, st2[0], st2[1]), '#dfe6ff', Math.max(1, Math.round(K / 6))); });
+        discX(X + 0.01, 31.2, 28.2, 1.05, '#e9e4cc'); discX(X + 0.02, 31.65, 28.45, 0.85, sky[0]);
+        g.globalAlpha = 1;
+      }
+      var sun = cl < 0.7 ? sunAt(h) : null;
+      if (sun) {                                                               // soleil qui traverse la fenêtre
+        g.globalAlpha = 1 - cl / 0.7;
+        var sy2 = 33 - sun.k * 10.6, sz2 = 17.5 + Math.sin(Math.PI * sun.k) * 11;
+        discX(X + 0.01, sy2, sz2, 1.3, hexMix('#ffd27a', '#fff6d8', dl)); g.globalAlpha *= 0.25; discX(X + 0.01, sy2, sz2, 2.2, '#fff1c4'); g.globalAlpha = 1;
+      }
+      var nc = 3 + Math.round(cl * 5), ccol = hexMix(hexMix('#2a2f3c', '#f4f7fb', dl), hexMix('#1e222b', '#9aa0aa', dl), Math.max(WX.rain, WX.storm));
+      if (dl > 0.1 || cl > 0.4) {                                              // nuages qui défilent (plus nombreux et gris si couvert)
+        g.globalAlpha = Math.min(0.9, (0.25 + 0.6 * dl) * (0.5 + cl));
+        for (var c = 0; c < nc; c++) {
+          var cy = 34.5 - ((t / (90000 - cl * 40000) + c * 0.37) % 1) * 14, cz = 25 + (c % 4) * 1.4;
+          [[0, 0, 1.0 + cl * 0.4], [0.9, 0.25, 0.8], [-0.9, 0.15, 0.75]].forEach(function (pp) { var yy = cy + pp[0]; if (yy > 22.6 && yy < 33.4) discX(X + 0.012, yy, cz + pp[1], pp[2], ccol); });
+        }
+        g.globalAlpha = 1;
+      }
+      if (flash > 0) { g.globalAlpha = flash * 0.8; qX(X + 0.012, 22.2, 33.8, 16.2, 30.8, '#e8eeff'); g.globalAlpha = 1; }
+      BLDG.forEach(function (bd, j) {
+        qX(X + 0.013, bd[0], bd[1], 16.2, bd[2], hexMix(j % 2 ? '#090d19' : '#0b1020', j % 2 ? '#56607a' : '#4b546c', dl));
+        if (WX.snow > 0.3 || XM) qX(X + 0.014, bd[0], bd[1], bd[2] - 0.35, bd[2], '#c9d3e2');
+      });
+      if (dl < 0.7) CITY.forEach(function (w, i) { if (hash(i, Math.floor(t / 5000 + w[3] * 10)) < 0.1) return; g.globalAlpha = 1 - dl / 0.7; px(P(-19.93, w[0], w[1]), w[2], Math.max(1, Math.round(K / 6))); });
+      g.globalAlpha = 1;
+      /* Pluie et neige derrière la vitre, brume */
+      var e = Math.max(1, Math.round(K / 6));
+      if (WX.rain > 0.05) {
+        g.globalAlpha = 0.5;
+        var nr = Math.round(RAIN.length * WX.rain);
+        for (var r = 0; r < nr; r++) {
+          var rd = RAIN[r], zr = 30.8 - ((t / (420 / rd[2]) + rd[1]) % 1) * 14.6;
+          line(P(-19.93, rd[0], zr), P(-19.93, rd[0] + 0.18, zr - 0.7), '#b4c6e6');
+        }
+        g.globalAlpha = 1;
+      }
+      if (WX.snow > 0.05) {
+        g.fillStyle = '#eef3ff'; g.globalAlpha = 0.9;
+        var ns = Math.round(RAIN.length * WX.snow);
+        for (var sn = 0; sn < ns; sn++) {
+          var sd = RAIN[sn], zs = 30.8 - ((t / (4200 / sd[2]) + sd[1]) % 1) * 14.6, ys = sd[0] + Math.sin(t / 700 + sn) * 0.35;
+          if (ys > 22.3 && ys < 33.7) { var qs = P(-19.93, ys, zs); g.fillRect(Math.round(qs[0]), Math.round(qs[1]), e, e); }
+        }
+        g.globalAlpha = 1;
+      }
+      if (WX.fog > 0.05) { g.globalAlpha = 0.55 * WX.fog; qX(X + 0.02, 22.2, 33.8, 16.2, 30.8, hexMix('#3a3f4a', '#c9ced6', dl)); g.globalAlpha = 1; }
+      qX(X + 0.03, 27.85, 28.15, 16.2, 30.8, '#4a4f5c'); qX(X + 0.03, 22.2, 33.8, 23.4, 23.7, '#4a4f5c');
+      /* Gouttes sur la vitre qui glissent */
+      if (WX.rain > 0.05) {
+        var nd = Math.round(DROPS.length * WX.rain);
+        for (var d = 0; d < nd; d++) {
+          var dr = DROPS[d], zd = dr[1] - ((t / 9000 * dr[3] + dr[2]) % 1) * 3;
+          if (zd < 16.4) continue;
+          var qd = P(-19.92, dr[0], zd);
+          g.globalAlpha = 0.7; g.fillStyle = '#c8d6ee'; g.fillRect(Math.round(qd[0]), Math.round(qd[1]), e, e + 1);
+          g.globalAlpha = 0.35; g.fillRect(Math.round(qd[0]), Math.round(qd[1]) - 3 * e, e, 3 * e);
+        }
+        g.globalAlpha = 1;
+      }
+    }
+    /* Tache de soleil au sol (projection de la fenêtre) */
+    function sunPatch(h) {
+      var sun = sunAt(h); if (!sun) return null;
+      var tn = Math.tan(sun.el);
+      function F(y, z) { var d = z / tn; return [-20 + d, y + d * sun.drift]; }
+      return [F(22.2, 16.2), F(33.8, 16.2), F(33.8, 30.8), F(22.2, 30.8)];
+    }
+    function drawSunPatch(h, amt) {
+      var pts = sunPatch(h); if (!pts || amt <= 0) return;
+      g.globalCompositeOperation = 'lighter';
+      fillPoly(pts.map(function (p) { return P(p[0], p[1], 0.02); }), 'rgba(255,214,150,' + (0.11 * amt).toFixed(3) + ')');
+      var m0 = [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2], m1 = [(pts[3][0] + pts[2][0]) / 2, (pts[3][1] + pts[2][1]) / 2];
+      g.globalCompositeOperation = 'source-over';
+      g.globalAlpha = 0.35 * amt; line(P(m0[0], m0[1], 0.03), P(m1[0], m1[1], 0.03), '#3a2a20'); g.globalAlpha = 1;   // ombre du montant
+    }
+    /* Lumière d'ambiance : la pièce s'éclaire le jour, se réchauffe à l'aube et au crépuscule */
+    function applyDaylight(h) {
+      var dl = daylight(h) * (1 - 0.5 * WX.cloud), du = duskGlow(h) * (1 - 0.7 * WX.cloud);
+      if (dl > 0.01) {
+        g.globalCompositeOperation = 'soft-light'; g.fillStyle = 'rgba(255,246,232,' + (0.55 * dl).toFixed(3) + ')'; g.fillRect(0, 0, W, H);
+        g.globalCompositeOperation = 'screen'; g.fillStyle = 'rgba(70,72,78,' + (0.32 * dl).toFixed(3) + ')'; g.fillRect(0, 0, W, H);
+      }
+      if (du > 0.01) { g.globalCompositeOperation = 'soft-light'; g.fillStyle = 'rgba(255,140,70,' + (0.35 * du).toFixed(3) + ')'; g.fillRect(0, 0, W, H); }
+      var wet = Math.max(WX.rain, WX.storm);
+      if (wet > 0.05) { g.globalCompositeOperation = 'soft-light'; g.fillStyle = 'rgba(50,62,85,' + (0.3 * wet).toFixed(3) + ')'; g.fillRect(0, 0, W, H); }
+      g.globalCompositeOperation = 'source-over';
+      if (flash > 0) { g.fillStyle = 'rgba(215,228,255,' + (0.28 * flash).toFixed(3) + ')'; g.fillRect(0, 0, W, H); }   // éclair
+    }
+
+    /* ================= Souris : laser et caresses ================= */
+    var PTR = { px: 0, py: 0, last: -1e9, inside: false }, INPUT = { laser: null, pet: false }, lastBox = null, clockMs = 0;
+    function pointer(cx, cy) { PTR.px = cx; PTR.py = cy; PTR.last = clockMs; PTR.inside = true; }
+    function pointerLeave() { PTR.inside = false; }
+    function overCat(cx, cy) {
+      if (!lastBox) return false;
+      var lx = Math.floor(cx) - lastBox.x0, ly = Math.floor(cy) - lastBox.y0;
+      for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) {
+        var X = lx + dx, Y = ly + dy;
+        if (X >= 0 && Y >= 0 && X < lastBox.w && Y < lastBox.h && MK[Y * lastBox.w + X]) return true;
+      }
+      return false;
+    }
+    function floorAt(cx, cy) { var u = (cx - OX) / K, w = (cy - OY) / K; return [w + u / 2, w - u / 2]; }
+    /* Zones de sol libres (pas sous un meuble) */
+    function walkable(x, y) {
+      if (x < -7 || x > 36 || y < -11 || y > 30) return false;
+      if (x < -7.5 && y > -7 && y < 19) return false;                 // bureau
+      if (Math.hypot(x + 4.6, y - 14.2) < 4.2) return false;          // chaise
+      if (x > 3.5 && x < 16.5 && y < -9.5) return false;              // baie
+      if (x > 21 && y < -13.6) return false;                          // canapé
+      if (x < -11 && (y < -11 || y > 29)) return false;               // arbre à chat, carton
+      return true;
+    }
+    function readInput() {
+      INPUT.laser = null; INPUT.pet = false;
+      if (!PTR.inside || opt.interactive === false) return;
+      var age = clockMs - PTR.last;
+      if (age < 1500 && overCat(PTR.px, PTR.py)) { INPUT.pet = true; return; }
+      if (age < 2500) { var f = floorAt(PTR.px, PTR.py); if (walkable(f[0], f[1])) INPUT.laser = { x: f[0], y: f[1], moving: age < 300 }; }
+    }
+    function drawLaser() {
+      var L = INPUT.laser; if (!L) return;
+      var q = P(L.x, L.y, 0.05), fl = 0.85 + 0.15 * Math.sin(clockMs / 40);
+      glow(L.x, L.y, 0.05, 7, 'rgba(255,40,40,' + (0.45 * fl).toFixed(3) + ')');
+      g.fillStyle = '#ff2a2a'; g.fillRect(Math.round(q[0]) - 1, Math.round(q[1]) - 1, 3, 2);
+      g.fillStyle = '#ffd0d0'; g.fillRect(Math.round(q[0]), Math.round(q[1]) - 1, 1, 1);
+    }
+    /* Petits cœurs quand on la caresse */
+    var HEART = ['.X.X.', 'XXXXX', 'XXXXX', '.XXX.', '..X..'];
+    function drawHearts(head, ms) {
+      var e = Math.max(1, Math.round(K / 8));
+      for (var k = 0; k < 3; k++) {
+        var life = (ms / 1400 + k / 3) % 1, q = P(head[0] + (k - 1) * 0.6, head[1] - (k - 1) * 0.6, head[2] + 1.6 + life * 3.5);
+        g.globalAlpha = Math.sin(life * Math.PI); g.fillStyle = '#ff7aa8';
+        for (var r = 0; r < 5; r++) for (var c = 0; c < 5; c++) if (HEART[r][c] === 'X') g.fillRect(Math.round(q[0]) + (c - 2) * e, Math.round(q[1]) + r * e, e, e);
+      }
+      g.globalAlpha = 1;
+    }
+    if (opt.scenario === 'live' && typeof window !== 'undefined' && window.addEventListener && opt.interactive !== false) {
+      window.addEventListener('mousemove', function (e) {
+        var r = cv.getBoundingClientRect(), sc = Math.max(r.width / W, r.height / H);
+        pointer((e.clientX - r.left - (r.width - W * sc) / 2) / sc, (e.clientY - r.top - (r.height - H * sc) / 2) / sc);
+      });
+      document.addEventListener('mouseleave', pointerLeave);
+    }
+
+    /* ================= Vie autonome (fond d'écran) =================
+       Au lieu d'un scénario fixe, la chatonne enchaîne des activités choisies au hasard selon l'heure.
+       Chaque activité est une suite de petites tâches (marcher, sauter, se coucher...). */
+    var EAT = pose({ headPitch: -0.95, headLift: -0.4, bodyZ: 2.25, frontReach: 0.3, tailUp: 0.7, sway: 0.6 });
+    var GROOM = pose({ headPitch: -0.7, headYaw: 0.45, headLift: 0.0, eyes: 0.3 }, SIT);
+    var WATCH = pose({ headPitch: 0.28, headLift: 0.3, sway: 1.4, swayF: 1.6 }, SIT);
+    var SCRATCH = pose({ pitch: 0.95, bodyZ: 2.0, frontReach: 0.6, frontLift: 1.9, headPitch: 0.15, tailUp: 0.9, earsBack: 0.2 });
+    var RUN = pose({ walk: 1, headLift: 0.25, bodyZ: 2.35, stretch: 1.12, tailUp: 0.4, tailCurl: 0.05, earsBack: 0.35 });
+
+    var LIVE = null;
+    if (opt.scenario === 'live') LIVE = (function () {
+      /* Spots en hauteur : centre, hauteur, point de décollage/atterrissage, point d'approche au sol, orientation de repos */
+      var SP = {
+        rack:    { c: [10, -15], z: RACK_TOP, edge: [10, -12.4], ap: [9.6, -4.2], h: PI2 },
+        desk:    { c: KM, z: KB_TOP, edge: DL, ap: FD, h: Math.PI / 4 },
+        sofa:    { c: [29.5, -16.2], z: 5.2, edge: [29.5, -14.8], ap: [29.5, -8.0], h: 0 },
+        sill:    { c: [-18.4, 28.5], z: 15.2, edge: [-17.2, 28.5], ap: [-10.5, 27.5], h: Math.PI },
+        treeMid: { c: [-14, -14.5], z: 9.8, edge: [-12.6, -13.1], ap: [-8.2, -8.5], h: Math.PI / 4 },
+        treeTop: { c: [-17, -17], z: 18.8, edge: [-15.8, -15.8], h: Math.PI / 4 },
+        box:     { c: [-13.5, 31.8], z: 0.35, edge: [-13.5, 31.8], ap: [-6.0, 31.0], h: Math.PI / 4 }
+      };
+      var FLOOR = { food: [[-6, -12.0], -PI2], water: [[-3.3, -12.8], -PI2], sun: [[-10, 27], 0.6], rug: [[7, 0], Math.PI / 4], scratch: [[-12.3, -12.7], -2.36] };
+      var HUB = [3, 3];
+      var seed = 98765;
+      function rand() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      function rr(a, b) { return a + (b - a) * rand(); }
+
+      var Q = [], cur = null, curStart = 0, lastQ = null, pc = { x: SP.rack.c[0], y: SP.rack.c[1], z: RACK_TOP, h: PI2, at: 'rack' };
+      var power = 1, powerState = 'on', offSince = 0, bootAt = -1, lastAct = '', scriptI = 0;
+      function add(d, f, end, kind) { Q.push({ d: d, f: f, end: end, kind: kind || 'move', at: pc.at }); }
+      function place(x, y, z, h, where) { pc = { x: x, y: y, z: z, h: h, at: where === undefined ? pc.at : where }; }
+
+      /* ---- Tâches élémentaires ---- */
+      function holdPose(P0, d, extra, zzz) {
+        var x = pc.x, y = pc.y, z = pc.z, h = pc.h;
+        add(d, function (p, ms) { var q = pose({}, P0); if (extra) extra(q, p, ms); return { q: at(q, x, y, z, h), zzz: zzz ? Math.min(1, p * d / 800, (1 - p) * d / 400) : 0 }; }, null, 'hold');
+      }
+      function morph(A, B, d, extra) {
+        var x = pc.x, y = pc.y, z = pc.z, h = pc.h;
+        add(d, function (p, ms) { var q = mixP(A, B, eio(p)); if (extra) extra(q, p, ms); return { q: at(q, x, y, z, h) }; }, null, 'morph');
+      }
+      function walkTo(tx, ty, speed, run) {
+        var sx = pc.x, sy = pc.y, z = pc.z, d = Math.hypot(tx - sx, ty - sy);
+        if (d < 0.05) return;
+        var h0 = pc.h, h1 = Math.atan2(ty - sy, tx - sx), dur = Math.max(260, d / (speed || 7) * 1000), turnF = Math.min(0.35, 420 / dur);
+        add(dur, function (p) {
+          var t = run ? p : eio(p), x = sx + (tx - sx) * t, y = sy + (ty - sy) * t;
+          return { q: at(pose({}, run ? RUN : WALK), x, y, z, angLerp(h0, h1, ss(0, turnF, p)), d * t * (run ? 1.6 : 2.6)) };
+        }, null, 'walk');
+        place(tx, ty, z, h1);
+      }
+      function turnTo(h1) {
+        var h0 = pc.h, dd = Math.abs(((h1 - h0) % 6.2832 + 9.4248) % 6.2832 - 3.1416);
+        if (dd < 0.2) { place(pc.x, pc.y, pc.z, h1); return; }
+        var x = pc.x, y = pc.y, z = pc.z;
+        add(300 + dd * 220, function (p, ms) { return { q: at(pose({ walk: 0.6 * tri(p) }), x, y, z, angLerp(h0, h1, eio(p)), ms * 0.014) }; }, null, 'turn');
+        place(x, y, z, h1);
+      }
+      function crouch(lookPitch, d) {
+        var x = pc.x, y = pc.y, z = pc.z, h = pc.h;
+        add(d || 650, function (p, ms) {
+          var q = mixP(STAND, CROUCH, eio(Math.min(1, p * 1.6)));
+          q.headPitch = lookPitch * ss(0, 0.4, p); q.headLift = 0.3;
+          return { q: wiggle(at(q, x, y, z, h), ms, ss(0.45, 0.8, p)) };
+        });
+      }
+      function leapTo(tx, ty, tz, where, minA) {
+        var S = [pc.x, pc.y], Sz = pc.z, E = [tx, ty], d = dist(S, E), dur = Math.max(380, Math.min(620, 360 + d * 11 + Math.abs(tz - Sz) * 6));
+        add(dur, function (p) { return { q: leap(S, Sz, E, tz, p, minA) }; });
+        var hd = Math.atan2(ty - S[1], tx - S[0]);
+        add(440, function (p) { return { q: at(land(p), tx, ty, tz, hd) }; });
+        place(tx, ty, tz, hd, where);
+      }
+
+      /* ---- Déplacements entre les spots ---- */
+      /* Marche au sol en contournant la chaise (côté fenêtre) : passage par WEST puis par le centre */
+      var WEST = [6, 20];
+      function route(tgt) {
+        var a = [pc.x, pc.y], westA = a[1] > 17, westB = tgt[1] > 17;
+        if (westA !== westB) {
+          if (westA) { walkTo(WEST[0], WEST[1]); if (dist(WEST, tgt) > 10) walkTo(HUB[0], HUB[1]); }
+          else { if (dist(a, WEST) > 10 && dist(a, HUB) > 4) walkTo(HUB[0], HUB[1]); walkTo(WEST[0], WEST[1]); }
+        } else if (!westA && dist(a, tgt) > 14 && dist(a, HUB) > 4 && dist(HUB, tgt) > 4) walkTo(HUB[0], HUB[1]);
+        walkTo(tgt[0], tgt[1]);
+      }
+      function leaveSpot() {
+        var s;
+        if (pc.at === 'floor') return;
+        if (pc.at === 'box') { turnTo(0); crouch(0.1, 500); leapTo(SP.box.ap[0], SP.box.ap[1], 0, 'floor', 3.2); return; }
+        if (pc.at === 'treeTop') {
+          s = SP.treeTop; walkTo(s.edge[0], s.edge[1], 4); turnTo(Math.atan2(SP.treeMid.c[1] - s.edge[1], SP.treeMid.c[0] - s.edge[0]));
+          crouch(-0.5); leapTo(SP.treeMid.c[0], SP.treeMid.c[1], SP.treeMid.z, 'treeMid');
+        }
+        s = SP[pc.at];
+        walkTo(s.edge[0], s.edge[1], 4);
+        turnTo(Math.atan2(s.ap[1] - s.edge[1], s.ap[0] - s.edge[0]));
+        crouch(-0.5); leapTo(s.ap[0], s.ap[1], 0, 'floor');
+      }
+      function climb(name) {
+        var s = SP[name];
+        if (name === 'treeTop') { climb('treeMid'); turnTo(Math.atan2(s.c[1] - pc.y, s.c[0] - pc.x)); crouch(0.6); leapTo(s.c[0], s.c[1], s.z, 'treeTop'); turnTo(s.h); return; }
+        turnTo(Math.atan2(s.edge[1] - pc.y, s.edge[0] - pc.x));
+        crouch(name === 'box' ? 0.2 : 0.55);
+        leapTo(s.edge[0], s.edge[1], s.z, name, name === 'box' ? 3.4 : 0);
+        walkTo(s.c[0], s.c[1], 4);
+        turnTo(s.h);
+      }
+      function goTo(name) {
+        if (name === pc.at) return;
+        if ((pc.at === 'rack' && name === 'desk') || (pc.at === 'desk' && name === 'rack')) {     // saut direct baie <-> bureau
+          var from = SP[pc.at], to = SP[name];
+          walkTo(from.edge[0], from.edge[1], 4);
+          turnTo(Math.atan2(to.edge[1] - pc.y, to.edge[0] - pc.x)); crouch(0); leapTo(to.edge[0], to.edge[1], to.z, name);
+          if (name === 'rack') { walkTo(to.c[0], to.c[1], 4); turnTo(to.h); }
+          return;
+        }
+        leaveSpot();
+        var tgt = SP[name] ? (name === 'treeTop' ? SP.treeMid.ap : SP[name].ap) : FLOOR[name][0];
+        route(tgt);
+        if (SP[name]) { if (name === 'desk') { turnTo(H_DESK); crouch(0.6); leapTo(DL[0], DL[1], KB_TOP, 'desk'); } else climb(name); }
+        else turnTo(FLOOR[name][1]);
+      }
+
+      /* ---- Activités ---- */
+      function blink(q, ms, base) { q.eyes = (ms % 3700) < 140 ? 0 : (base === undefined ? 1 : base); }
+      function nap(where) {
+        goTo(where);
+        morph(STAND, LIE, 900);
+        morph(LIE, SLEEP, 1400, function (q, p) { q.eyes = 1 - ss(0.3, 0.8, p); });
+        holdPose(SLEEP, rr(18000, 45000), function (q, p, ms) { q.earsBack = 0.6 + 0.4 * tri((ms % 9000 - 6000) / 300); }, true);
+        morph(SLEEP, AWAKE, 1000, function (q, p) { q.eyes = ss(0.4, 0.7, p); });
+        if (rand() < 0.6) morph(AWAKE, YAWN, 1000, function (q, p) { var k = tri(p); for (var kk in q) q[kk] = AWAKE[kk] + (YAWN[kk] - AWAKE[kk]) * k; });
+        morph(AWAKE, STAND, 800);
+        if (rand() < 0.5) morph(STAND, STRETCH, 1500, function (q, p) { var k = p < 0.35 ? eio(p / 0.35) : p < 0.6 ? 1 : 1 - eio((p - 0.6) / 0.4); for (var kk in q) q[kk] = STAND[kk] + (STRETCH[kk] - STAND[kk]) * k; });
+      }
+      function eat(which) {
+        goTo(which);
+        morph(STAND, EAT, 500);
+        holdPose(EAT, which === 'food' ? rr(5000, 8000) : rr(3000, 5000), function (q, p, ms) { q.headLift = -0.4 + 0.06 * Math.sin(ms / 90); q.headPitch = -0.95 + 0.05 * Math.sin(ms / 90); });
+        morph(EAT, STAND, 500);
+        groom(rr(2500, 4000));
+      }
+      function groom(d) {
+        morph(STAND, SIT, 700);
+        morph(SIT, GROOM, 400);
+        holdPose(GROOM, d || rr(3500, 6000), function (q, p, ms) { q.headPitch = -0.7 + 0.12 * Math.sin(ms / 160); q.headYaw = 0.45 * Math.sin(ms / 1400); });
+        morph(GROOM, SIT, 400);
+        morph(SIT, STAND, 600);
+      }
+      function watchWindow() {
+        goTo('sill');
+        morph(STAND, WATCH, 800);
+        holdPose(WATCH, rr(9000, 18000), function (q, p, ms) { q.headYaw = 0.55 * Math.sin(ms / 1700) + 0.2 * Math.sin(ms / 430); blink(q, ms); q.earsBack = -0.15; });
+        morph(WATCH, STAND, 700);
+      }
+      function sitLook(where) {
+        if (where) goTo(where);
+        morph(STAND, SIT, 700);
+        holdPose(SIT, rr(4000, 9000), function (q, p, ms) { q.headYaw = 0.7 * Math.sin(ms / 2100); blink(q, ms); });
+        morph(SIT, STAND, 600);
+      }
+      function scratch() {
+        goTo('scratch');
+        place(pc.x, pc.y, 0.8, pc.h);
+        morph(STAND, SCRATCH, 500);
+        holdPose(SCRATCH, rr(2500, 4000), function (q, p, ms) { q.frontLift = 1.7 + 0.35 * Math.sin(ms / 110); q.frontReach = 0.6 + 0.12 * Math.sin(ms / 110); });
+        morph(SCRATCH, STAND, 500);
+        place(pc.x, pc.y, 0, pc.h);
+      }
+      function zoomies() {
+        leaveSpot();
+        route([3, 0]);
+        var pts = [[rr(-2, 12), rr(-8, 3)], [rr(0, 13), rr(-7, 3)], [rr(-2, 12), rr(-8, 3)], [7, 0]];
+        pts.forEach(function (pt) { crouch(0, 350); walkTo(pt[0], pt[1], 20, true); });
+        sitLook();
+      }
+      function boxTime() {
+        goTo('box');
+        morph(STAND, SIT, 600);
+        holdPose(SIT, rr(5000, 9000), function (q, p, ms) { q.headYaw = 0.8 * Math.sin(ms / 1500); blink(q, ms); });
+        morph(SIT, STAND, 600);
+        if (rand() < 0.5) nap('box');
+      }
+      function keyboard() {
+        goTo('desk');
+        [14, 15, 16, 17, 18].forEach(function (i) { add(PH_BANNER[i][0], PH_BANNER[i][1], i === 16 ? function () { powerState = 'off'; } : null, 'kbd'); });
+        place(KM[0], KM[1], KB_TOP, Math.PI / 4, 'desk');
+      }
+
+      /* ---- Poursuite du laser ---- */
+      var LASER = null, lastLaserMs = -1e9, laserSeen = 0, chasing = false, curMs = 0;
+      function chaseTask() {
+        var S = null;
+        return function (p, ms) {
+          if (!S) S = { x: pc.x, y: pc.y, h: pc.h, ph: 0, mode: 'run', mt: 0, last: ms };
+          var dt = Math.min(0.06, (ms - S.last) / 1000); S.last = ms;
+          if (curMs - lastLaserMs > 2200 && S.mode !== 'pounce') { this.d = ms; chasing = false; }
+          var L = LASER, tx = L ? L.x : S.x, ty = L ? L.y : S.y, dx = tx - S.x, dy = ty - S.y, d = Math.hypot(dx, dy), q, z = 0;
+          if (S.mode === 'pounce') {                                    // bond sur le point rouge
+            S.mt += dt; var k = Math.min(1, S.mt / 0.38);
+            S.x = S.x0 + (S.x1 - S.x0) * k; S.y = S.y0 + (S.y1 - S.y0) * k; z = 1.4 * Math.sin(Math.PI * k);
+            q = k < 0.5 ? mixP(TAKEOFF, TUCK, k * 2) : mixP(TUCK, REACH, (k - 0.5) * 2); q.pitch = 0.5 * (0.5 - k);
+            if (k >= 1) { S.mode = 'run'; S.mt = 0; }
+          } else if (d > 1.8) {                                          // course
+            S.mode = 'run';
+            var v = Math.min(22, 3 + d * 4), hd = Math.atan2(dy, dx);
+            S.h = angLerp(S.h, hd, Math.min(1, dt * 9));
+            var nx = S.x + Math.cos(S.h) * v * dt, ny = S.y + Math.sin(S.h) * v * dt;
+            if (walkable(nx, ny)) { S.x = nx; S.y = ny; } else if (walkable(nx, S.y)) S.x = nx; else if (walkable(S.x, ny)) S.y = ny;
+            S.ph += v * dt * (v > 10 ? 1.6 : 2.6);
+            q = pose({}, v > 10 ? RUN : WALK);
+          } else {                                                       // tout près : se ramasse, remue, bondit
+            if (S.mode !== 'crouch') { S.mode = 'crouch'; S.mt = 0; S.wait = 0.5 + rand() * 0.5; }
+            S.mt += dt; S.h = angLerp(S.h, Math.atan2(dy, dx), Math.min(1, dt * 6));
+            q = mixP(STAND, CROUCH, Math.min(1, S.mt / 0.25)); q.headPitch = -0.4; q.earsBack = -0.1;
+            if (S.mt > S.wait) {
+              S.mode = 'pounce'; S.mt = 0; S.x0 = S.x; S.y0 = S.y;
+              var reach = Math.min(2.6, d + 0.8), ex = S.x + Math.cos(S.h) * reach, ey = S.y + Math.sin(S.h) * reach;
+              if (!walkable(ex, ey)) { ex = S.x; ey = S.y; }
+              S.x1 = ex; S.y1 = ey;
+            }
+          }
+          var out = at(q, S.x, S.y, z, S.h, S.ph);
+          if (S.mode === 'crouch') wiggle(out, ms, Math.min(1, S.mt / 0.3));
+          return { q: out };
+        };
+      }
+      function canInterrupt() { return cur && (cur.kind === 'hold' || cur.kind === 'morph' || cur.kind === 'walk' || cur.kind === 'turn') && lastQ; }
+      function startChase() {
+        var from = lastQ, at0 = cur.at;
+        place(from.x, from.y, from.z, from.h, at0);
+        Q = []; cur = null; chasing = true;
+        add(380, function (p) { return { q: at(mixP(from, STAND, eio(p)), from.x, from.y, from.z, from.h) }; }, null, 'morph');
+        leaveSpot();
+        add(1e9, chaseTask(), null, 'chase');
+        add(700, function (p) { return { q: at(mixP(STAND, SIT, eio(p)), pc.x, pc.y, 0, pc.h) }; }, null, 'morph');
+        add(2500, function (p, ms) { var q = pose({ headYaw: 0.6 * Math.sin(ms / 900) }, SIT); return { q: at(q, pc.x, pc.y, 0, pc.h) }; }, null, 'hold');
+        add(600, function (p) { return { q: at(mixP(SIT, STAND, eio(p)), pc.x, pc.y, 0, pc.h) }; }, null, 'morph');
+      }
+
+      /* ---- Choix de la prochaine activité selon l'heure ---- */
+      function plan(hour, sunny) {
+        var night = hour < 6.5 || hour >= 23, morning = hour >= 6.5 && hour < 10, day = hour >= 10 && hour < 17.5;
+        var A = [
+          ['napRack', night ? 4 : 2, function () { nap('rack'); }],
+          ['napSofa', night ? 4 : 2.5, function () { nap('sofa'); }],
+          ['napTree', 2, function () { nap('treeTop'); }],
+          ['napSun', day && sunny && sunPatch(hour) ? 5 : 0, function () {
+            var sp = sunPatch(hour), cx = 0, cy = 0; sp.forEach(function (p) { cx += p[0] / 4; cy += p[1] / 4; });
+            FLOOR.sun[0] = [Math.max(-15, Math.min(12, cx)), Math.max(20.5, Math.min(34, cy))]; nap('sun');
+          }],
+          ['eat', morning ? 5 : 1.5, function () { eat('food'); }],
+          ['drink', 1.5, function () { eat('water'); }],
+          ['window', night ? 0.8 : 3.5, watchWindow],
+          ['groom', 1.5, function () { goTo('rug'); groom(); }],
+          ['scratch', night ? 0.3 : 1.5, scratch],
+          ['zoomies', hour >= 17.5 && hour < 23 ? 2.5 : 0.4, zoomies],
+          ['box', 2, boxTime],
+          ['sit', 1, function () { sitLook('rug'); }],
+          ['keyboard', hour >= 17 && hour < 24 ? 0.6 : 0.15, keyboard]
+        ];
+        if (opt.script) {                                                 // ordre imposé (export vidéo)
+          var nm = opt.script[scriptI++ % opt.script.length];
+          for (var j = 0; j < A.length; j++) if (A[j][0] === nm) { lastAct = nm; A[j][2](); return; }
+        }
+        A = A.filter(function (a) { return a[1] > 0 && a[0] !== lastAct; });
+        var tot = A.reduce(function (s2, a) { return s2 + a[1]; }, 0), r = rand() * tot;
+        for (var i = 0; i < A.length; i++) { r -= A[i][1]; if (r <= 0 || i === A.length - 1) { lastAct = A[i][0]; A[i][2](); return; } }
+      }
+
+      /* Départ : elle dort sur la baie */
+      holdPose(SLEEP, 6000, null, true);
+      morph(SLEEP, AWAKE, 1000, function (q, p) { q.eyes = ss(0.4, 0.7, p); });
+      morph(AWAKE, STAND, 800);
+
+      return {
+        state: function (ms, hour, sunny, input) {
+          var dtIn = Math.min(100, ms - curMs); curMs = ms;
+          if (input && input.laser) { LASER = input.laser; lastLaserMs = ms; laserSeen += dtIn; } else laserSeen = 0;
+          if (input && input.laser && !chasing && canInterrupt()) {
+            var asleep = lastQ.curl > 0.5;
+            if (!asleep || laserSeen > 1500) startChase();
+          }
+          while (!cur || ms - curStart >= cur.d) {
+            if (cur) { if (cur.end) cur.end(); curStart += cur.d; if (lastQ) place(lastQ.x, lastQ.y, lastQ.z, lastQ.h); }
+            else curStart = ms;
+            if (!Q.length) { var wasDesk = pc.at === 'desk'; plan(hour, sunny); if (powerState === 'off' && !wasDesk) { powerState = 'boot'; bootAt = ms + 4000; } }
+            cur = Q.shift();
+            if (ms - curStart > 60000) curStart = ms;                // après une pause (onglet caché) : on repart proprement
+          }
+          var r = cur.f(Math.min(1, (ms - curStart) / cur.d), ms - curStart);
+          /* Caresses : seulement quand elle est posée (sieste, assise, couchée) */
+          if (input && input.pet && (cur.kind === 'hold' || cur.kind === 'morph') && r.q.walk < 0.1) {
+            r.purr = true;
+            if (cur.kind === 'hold') cur.d += dtIn;                              // elle reste tant qu'on la caresse
+            if (r.q.curl < 0.5) { r.q.eyes = 0.3; r.q.headPitch += 0.18; r.q.headYaw *= 0.5; r.q.earsBack = 0.15; }
+          }
+          lastQ = r.q;
+          /* Alimentation de la baie et écran */
+          if (r.power !== undefined) power = r.power;
+          else if (powerState === 'off') power = 0;
+          else if (powerState === 'boot') { power = ms < bootAt ? 0 : Math.min(1, (ms - bootAt) / 2500); if (power >= 1) powerState = 'on'; }
+          else power = 1;
+          if (r.screen === undefined) {
+            var nightScreen = hour >= 1 && hour < 7;
+            r.screen = power < 0.3 ? 'off' : (powerState === 'boot' && ms - bootAt < 1500) ? 'boot' : nightScreen ? 'off' : 'dash';
+          }
+          r.power = power;
+          if (r.zzz === undefined) r.zzz = 0;
+          r.t = ms;
+          return r;
+        }
+      };
+    })();
     var TOTAL = PH.reduce(function (s, p) { return s + p[0]; }, 0);
 
     function stateAt(ms) {
@@ -1339,19 +2113,27 @@
     var bg = layer(), glass = layer(), vig = layer(), fg = layer();
     g = bg.getContext('2d'); drawRoom(); drawDesk(); drawRack(); drawPlant();
     if (HW) { pumpkin(PUMPKINS[3]); pumpkin(PUMPKINS[0]); pumpkin(PUMPKINS[2]); candle(); drawHalloweenStatic(); }
+    if (XM) drawChristmasStatic();
+    if (LARGE) { g = bg.getContext('2d'); drawCouch(); drawSill(); drawBoxBack(); }
     g = fg.getContext('2d'); drawChair();
     g = glass.getContext('2d'); drawGlass();
     g = vig.getContext('2d'); drawVignette();
     g = ctx;
 
     function frame(ms) {
-      var st = stateAt(ms), cat = buildCat(st.q, ms);
+      var hour = timeOfDay(ms);
+      clockMs = ms;
+      if (LIVE) { updateWeather(ms); readInput(); }
+      var sunny = WX.cloud < 0.5 && WX.rain < 0.05 && WX.snow < 0.05;
+      var st = LIVE ? LIVE.state(ms, hour, sunny, INPUT) : stateAt(ms), cat = buildCat(st.q, ms);
+      api.state = st;
       g = ctx;
       ctx.drawImage(bg, 0, 0);
-      drawSky(ms);
+      if (LIVE) { drawSkyLive(hour, ms); drawSunPatch(hour, daylight(hour) * Math.max(0, 1 - WX.cloud * 1.6)); } else drawSky(ms);
       drawLeds(st);
       ctx.drawImage(glass, 0, 0);
       if (HW) drawHalloweenDynamic(ms);
+      if (XM) drawChristmasDynamic(ms);
       drawMonitor(st);
       var contacts = [];
       if (Math.abs(st.q.z - KB_TOP) < 0.1) {
@@ -1360,10 +2142,17 @@
       }
       drawKeyboard(contacts);
       drawMugSteam(ms);
+      var inBox = LARGE && st.q.x > BOX.x0 && st.q.x < BOX.x1 && st.q.y > BOX.y0 && st.q.y < BOX.y1;
+      if (LARGE && !inBox) drawBoxFront();
+      if (LIVE) drawLaser();
       drawCatShadow(cat);
-      drawFace(cat, renderCat(cat));
+      lastBox = renderCat(cat);
+      drawFace(cat, lastBox);
+      if (st.purr) drawHearts(cat.info.head, ms);
+      if (inBox) drawBoxFront();
       drawZzz(cat.info.head, ms, st.zzz);
       ctx.drawImage(fg, 0, 0);
+      if (LIVE) applyDaylight(hour);
       ctx.drawImage(vig, 0, 0);
     }
 
@@ -1371,18 +2160,18 @@
     var running = false;
     function start() {
       if (running) return; running = true;
-      var visible = true, clock = 0, last = null;
+      var visible = true, clock = 0, last = null, acc = 0, minDt = opt.fps ? 1000 / opt.fps : 0;
       if (typeof IntersectionObserver !== 'undefined') new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(cv);
       function loop(now) {
         if (last === null) last = now;
         var dt = Math.min(100, now - last); last = now;
-        if (visible && !document.hidden) { clock += dt; frame(clock); }
+        if (visible && !document.hidden) { clock += dt; acc += dt; if (acc >= minDt) { acc = minDt ? acc % minDt : 0; frame(clock); } }
         requestAnimationFrame(loop);
       }
       requestAnimationFrame(loop);
     }
 
-    var api = { frame: frame, duration: TOTAL, start: start, canvas: cv };
+    var api = { frame: frame, duration: TOTAL, start: start, canvas: cv, state: null, setWeather: setWeather, pointer: pointer, pointerLeave: pointerLeave };
     if (opt.autoplay !== false) {
       var reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduce) frame(opt.stillAt); else start();

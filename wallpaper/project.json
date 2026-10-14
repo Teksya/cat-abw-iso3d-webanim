@@ -1,0 +1,27 @@
+{
+  "file": "index.html",
+  "preview": "preview.jpg",
+  "title": "Chatonne et baie serveur",
+  "description": "Une chatonne écaille de tortue vit sa vie dans un appartement en pixel art : siestes, gamelle, fenêtre, carton, arbre à chat... Jour et nuit à l'heure réelle, météo de ta ville, laser à la souris et caresses au survol.",
+  "type": "web",
+  "general": {
+    "properties": {
+      "city": { "order": 0, "text": "Ville pour la météo", "type": "textinput", "value": "Saint-Étienne" },
+      "weather": {
+        "order": 1, "text": "Météo", "type": "combo", "value": "auto",
+        "options": [
+          { "label": "Réelle (selon la ville)", "value": "auto" },
+          { "label": "Ciel dégagé", "value": "clear" },
+          { "label": "Quelques nuages", "value": "partly" },
+          { "label": "Couvert", "value": "cloudy" },
+          { "label": "Brouillard", "value": "fog" },
+          { "label": "Bruine", "value": "drizzle" },
+          { "label": "Pluie", "value": "rain" },
+          { "label": "Neige", "value": "snow" },
+          { "label": "Orage", "value": "storm" }
+        ]
+      },
+      "interactive": { "order": 2, "text": "Laser et caresses à la souris", "type": "bool", "value": true }
+    }
+  }
+}

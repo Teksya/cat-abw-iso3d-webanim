@@ -35,7 +35,8 @@
   // Thème via l'adresse : index.html?theme=halloween
   var theme = new URLSearchParams(location.search).get('theme') || undefined;
   CatScene.create(document.getElementById('banner'), { preset: 'banner', theme: theme });
-  CatScene.create(document.getElementById('avatar'), { preset: 'avatar', theme: theme });
+  // L'avatar en direct est en qualité standard (plus léger) ; les GIF exportés sont en HD
+  CatScene.create(document.getElementById('avatar'), { preset: 'avatar', theme: theme, quality: 'standard' });
 </script>
 </body>
 </html>

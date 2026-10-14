@@ -8,7 +8,9 @@
     "export:banner": "node tools/export.js banner",
     "export:avatar": "node tools/export.js avatar",
     "export:png": "node tools/export.js png",
-    "export:halloween": "node tools/export.js all --theme=halloween"
+    "export:halloween": "node tools/export.js all --theme=halloween",
+    "export:noel": "node tools/export.js all --theme=noel",
+    "build:wallpaper": "node -e \"require('fs').copyFileSync('src/cat-scene.js','wallpaper/cat-scene.js')\""
   },
   "devDependencies": {
     "canvas": "^2.11.2",

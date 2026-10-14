@@ -7,7 +7,7 @@
  *   node tools/export.js avatar    -> exports/avatar.gif
  *   node tools/export.js png       -> exports/avatar.png (+ exports/banniere.png)
  *
- * Options : --fps=20  --scale=2 (bannière) / 4 (avatar)  --theme=halloween
+ * Options : --fps=20  --scale=1 (bannière) / 2 (avatar)  --theme=halloween|noel
  *   (avec un thème, les fichiers sont suffixés : banniere-halloween.gif, avatar-halloween.gif...)
  */
 'use strict';
@@ -97,6 +97,6 @@ function png(preset, file, scale) {
   console.log(file + ' : ' + r.W + 'x' + r.H);
 }
 
-if (what === 'banner' || what === 'all') gif('banner', name('banniere', 'gif'), 2);
-if (what === 'avatar' || what === 'all') gif('avatar', name('avatar', 'gif'), 4);
-if (what === 'png' || what === 'all') { png('avatar', name('avatar', 'png'), 4); png('banner', name('banniere', 'png'), 2); }
+if (what === 'banner' || what === 'all') gif('banner', name('banniere', 'gif'), 1);
+if (what === 'avatar' || what === 'all') gif('avatar', name('avatar', 'gif'), 2);
+if (what === 'png' || what === 'all') { png('avatar', name('avatar', 'png'), 2); png('banner', name('banniere', 'png'), 1); }
