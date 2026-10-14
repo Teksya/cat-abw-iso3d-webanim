@@ -1,0 +1,16 @@
+{
+  "name": "cat-banner",
+  "version": "1.0.0",
+  "description": "Chatonne écaille de tortue en pixel art isométrique : bannière et avatar animés (navigateur + export GIF)",
+  "main": "src/cat-scene.js",
+  "scripts": {
+    "export": "node tools/export.js all",
+    "export:banner": "node tools/export.js banner",
+    "export:avatar": "node tools/export.js avatar",
+    "export:png": "node tools/export.js png"
+  },
+  "devDependencies": {
+    "canvas": "^2.11.2",
+    "gifenc": "^1.0.3"
+  }
+}

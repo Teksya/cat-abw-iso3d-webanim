@@ -1,0 +1,98 @@
+#!/usr/bin/env node
+/*
+ * Export des animations en GIF / PNG (pour Discord, GitHub, etc.)
+ *
+ *   npm run export                 -> bannière + avatar (GIF) + avatar fixe (PNG)
+ *   node tools/export.js banner    -> exports/banniere.gif
+ *   node tools/export.js avatar    -> exports/avatar.gif
+ *   node tools/export.js png       -> exports/avatar.png (+ exports/banniere.png)
+ *
+ * Options : --fps=20  --scale=2 (bannière) / 4 (avatar)
+ */
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const { createCanvas } = require('canvas');
+const { GIFEncoder, quantize } = require('gifenc');
+
+/* Le moteur tourne dans le navigateur : on fournit juste de quoi créer des calques */
+global.document = { createElement: () => createCanvas(1, 1), hidden: false };
+const CatScene = require('../src/cat-scene.js');
+
+const args = process.argv.slice(2);
+const flag = (name, def) => { const a = args.find(x => x.startsWith('--' + name + '=')); return a ? Number(a.split('=')[1]) : def; };
+const what = args.find(x => !x.startsWith('--')) || 'all';
+const OUT = path.join(__dirname, '..', 'exports');
+fs.mkdirSync(OUT, { recursive: true });
+
+function render(preset, scale) {
+  const src = createCanvas(1, 1);
+  const scene = CatScene.create(src, { preset, autoplay: false });
+  const W = src.width * scale, H = src.height * scale;
+  const out = createCanvas(W, H), o = out.getContext('2d');
+  o.imageSmoothingEnabled = false;
+  return {
+    scene, W, H, out,
+    grab(t) { scene.frame(t); o.drawImage(src, 0, 0, W, H); return o.getImageData(0, 0, W, H).data; }
+  };
+}
+
+/* Conversion vers la palette, stable d'une image à l'autre : une couleur donne toujours le même index.
+   (applyPalette de gifenc dépend du contenu de l'image, ce qui faisait clignoter les aplats.) */
+function mapper(colors) {
+  const cache = new Map();
+  return function (data) {
+    const n = data.length / 4, out = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2], key = (r << 16) | (g << 8) | b;
+      let v = cache.get(key);
+      if (v === undefined) {
+        let bd = Infinity;
+        for (let j = 0; j < colors.length; j++) {
+          const c = colors[j], dr = r - c[0], dg = g - c[1], db = b - c[2], d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+          if (d < bd) { bd = d; v = j; }
+        }
+        cache.set(key, v);
+      }
+      out[i] = v;
+    }
+    return out;
+  };
+}
+
+function gif(preset, file, scale) {
+  const fps = flag('fps', 20), r = render(preset, flag('scale', scale));
+  const n = Math.round(r.scene.duration / 1000 * fps);
+  /* Palette commune calculée sur quelques images réparties dans la boucle */
+  const samples = [0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95].map(f => f * r.scene.duration);
+  const big = new Uint8ClampedArray(r.W * r.H * 4 * samples.length);
+  samples.forEach((t, i) => big.set(r.grab(t), i * r.W * r.H * 4));
+  const colors = quantize(big, 255, { format: 'rgb565' });            // couleurs réelles
+  const TR = colors.length;                                            // index réservé à la transparence
+  const palette = colors.concat([[0, 0, 0]]);
+  const toIndex = mapper(colors);
+  const enc = GIFEncoder();
+  let prev = null;
+  for (let i = 0; i < n; i++) {
+    const idx = toIndex(r.grab(i * 1000 / fps));                        // jamais l'index transparent
+    let fr = idx;
+    if (prev) { fr = new Uint8Array(idx); for (let k = 0; k < idx.length; k++) if (idx[k] === prev[k]) fr[k] = TR; } // seuls les pixels qui changent
+    enc.writeFrame(fr, r.W, r.H, { palette: i === 0 ? palette : undefined, delay: Math.round(1000 / fps), transparent: i > 0, transparentIndex: TR, dispose: 1, repeat: 0 });
+    prev = idx;
+    if (i % Math.ceil(n / 10) === 0) process.stdout.write('\r' + file + ' ' + Math.round((i + 1) / n * 100) + ' %');
+  }
+  enc.finish();
+  fs.writeFileSync(path.join(OUT, file), enc.bytes());
+  console.log('\r' + file + ' : ' + r.W + 'x' + r.H + ', ' + n + ' images, ' + (enc.bytes().length / 1048576).toFixed(2) + ' Mo');
+}
+
+function png(preset, file, scale) {
+  const r = render(preset, flag('scale', scale));
+  r.grab(CatScene.presets[preset].stillAt);
+  fs.writeFileSync(path.join(OUT, file), r.out.toBuffer('image/png'));
+  console.log(file + ' : ' + r.W + 'x' + r.H);
+}
+
+if (what === 'banner' || what === 'all') gif('banner', 'banniere.gif', 2);
+if (what === 'avatar' || what === 'all') gif('avatar', 'avatar.gif', 4);
+if (what === 'png' || what === 'all') { png('avatar', 'avatar.png', 4); png('banner', 'banniere.png', 2); }
