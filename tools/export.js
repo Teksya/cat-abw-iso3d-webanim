@@ -9,11 +9,16 @@
  *
  *   node tools/export.js still portfolio --hour=14 --name=portfolio-jour
  *                                  -> exports/portfolio-jour.png (image fixe d'un préréglage, à l'instant stillAt)
+ *   node tools/export.js posters portfolio --status=unknown
+ *                                  -> affiches jour (14 h) et nuit (21 h), sans thème puis pour chaque thème :
+ *                                     portfolio-jour.png, portfolio-halloween-nuit.png, portfolio-anniversaire-jour.png...
+ *                                     et leur version légère en qualité standard (suffixe -sd)
  *
  * Options : --fps=20  --scale=1 (bannière) / 2 (avatar)  --theme=halloween|noel
  *   (avec un thème, les fichiers sont suffixés : banniere-halloween.gif, avatar-halloween.gif...)
  *   --hour=H : heure simulée pour les préréglages en direct (jour, nuit)
  *   --status=unknown : voyants de la baie éteints (aucun état inventé)
+ *   --age=N : âge de la chatonne en mois (2 = modèle d'origine, 12 = adulte)
  */
 'use strict';
 const fs = require('fs');
@@ -35,13 +40,14 @@ const OUT = path.join(__dirname, '..', 'exports');
 fs.mkdirSync(OUT, { recursive: true });
 
 const HOUR = flag('hour', undefined);
+const AGE = flag('age', undefined);              // --age=N : âge de la chatonne en mois (proportions)
 const nameArg = args.find(x => x.startsWith('--name='));
 /* --status=unknown : tous les appareils sans donnée (voyants éteints), pour une affiche qui n'invente aucun état */
 const STATUS = args.includes('--status=unknown') ? {} : undefined;
 
-function render(preset, scale) {
+function render(preset, scale, extra) {
   const src = createCanvas(1, 1);
-  const scene = CatScene.create(src, { preset, autoplay: false, theme: THEME, hour: HOUR, status: STATUS });
+  const scene = CatScene.create(src, Object.assign({ preset, autoplay: false, theme: THEME, hour: HOUR, status: STATUS, ageMonths: AGE }, extra));
   const W = src.width * scale, H = src.height * scale;
   const out = createCanvas(W, H), o = out.getContext('2d');
   o.imageSmoothingEnabled = false;
@@ -100,8 +106,8 @@ function gif(preset, file, scale) {
   console.log('\r' + file + ' : ' + r.W + 'x' + r.H + ', ' + n + ' images, ' + (enc.bytes().length / 1048576).toFixed(2) + ' Mo');
 }
 
-function png(preset, file, scale) {
-  const r = render(preset, flag('scale', scale));
+function png(preset, file, scale, extra) {
+  const r = render(preset, flag('scale', scale), extra);
   r.grab(CatScene.presets[preset].stillAt);
   fs.writeFileSync(path.join(OUT, file), r.out.toBuffer('image/png'));
   console.log(file + ' : ' + r.W + 'x' + r.H);
@@ -114,4 +120,15 @@ if (what === 'still') {
   const preset = args.filter(x => !x.startsWith('--'))[1] || 'banner';
   if (!CatScene.presets[preset]) throw new Error('Préréglage inconnu : ' + preset);
   png(preset, nameArg ? nameArg.split('=')[1] + '.png' : name(preset, 'png'), 1);
+}
+if (what === 'posters') {
+  const preset = args.filter(x => !x.startsWith('--'))[1] || 'portfolio';
+  if (!CatScene.presets[preset]) throw new Error('Préréglage inconnu : ' + preset);
+  [null, 'halloween', 'noel', 'anniversaire'].forEach(theme => {
+    [['jour', 14], ['nuit', 21]].forEach(([moment, hour]) => {
+      const base = preset + (theme ? '-' + theme : '') + '-' + moment;
+      png(preset, base + '.png', 1, { theme: theme || undefined, hour });
+      png(preset, base + '-sd.png', 1, { theme: theme || undefined, hour, quality: 'standard' });   // version légère (petits écrans)
+    });
+  });
 }

@@ -67,11 +67,13 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 | `status` | état réel des appareils de la baie, voir `setStatus` ci-dessous. Sans cette option, la baie vit sa vie |
 | `screenText`, `screenColor` | texte affiché sur l'écran du bureau, voir `setScreenText` |
 
-`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), play(nom), getHotspots(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`.
+`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), play(nom), activity(), getHotspots(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`.
 
-**État réel de la baie** : `setStatus({ fw, switch, server, nas, isp, mini, ups })`, chaque valeur valant `'up'` (voyants animés comme d'habitude), `'down'` (rouge fixe), `'degraded'` (orange fixe) ou `'unknown'` (éteints, gris). Un appareil absent de la carte est `'unknown'` : aucun vert sans donnée. Les appareils : `fw` pare-feu (U9), `switch` (U10), `server` serveur 2U (U6-7), `nas` (U4-5), `isp` box internet et `mini` mini PC (U3), `ups` onduleur (U1-2).
+**État réel de la baie** : `setStatus({ fw, switch, server, nas, isp, mini, ups })`, chaque valeur valant `'up'` (voyants animés comme d'habitude), `'down'` (rouge fixe), `'degraded'` (orange fixe) ou `'unknown'` (éteints, gris). Un appareil absent de la carte est `'unknown'` : aucun vert sans donnée. En mode état réel, les voyants sont redessinés par-dessus la lumière du jour (couleurs franches), sauf là où la chatonne passe devant. Les appareils : `fw` pare-feu (U9), `switch` (U10), `server` serveur 2U (U6-7), `nas` (U4-5), `isp` box internet et `mini` mini PC (U3), `ups` onduleur (U1-2).
 
 **Incident** : quand un appareil passe `'down'` (ou l'est déjà au démarrage), la chatonne va s'asseoir au sol devant la baie et fixe l'appareil 8 à 12 s. C'est prioritaire sur les activités au hasard, mais n'interrompt jamais une poursuite de laser ; chaque appareil a un délai de recharge (`incidentCooldown`).
+
+**Activité en cours** : `activity()` renvoie le nom de l'activité (`napRack`, `eat`, `incident`, `laser`...), par exemple pour un texte alternatif.
 
 **À la demande** : `play(nom)` lance une activité dès que possible (jamais pendant le laser) et renvoie `false` si le nom est inconnu. L'activité `celebrate` (zoomies puis pluie de cœurs) n'est jamais tirée au hasard, seulement demandée.
 
@@ -81,7 +83,7 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 
 Au doigt (vie autonome) : un tap sur la chatonne la caresse, un appui long (0,45 s) allume le laser, qui suit le doigt tant qu'il reste posé. Tant que le laser n'est pas allumé, le glissé fait défiler la page.
 
-Pour une page qui affiche le préréglage `portfolio`, une image fixe sert d'affiche avant le démarrage du canvas : `npm run export:portfolio` produit `exports/portfolio-jour.png` (14 h) et `exports/portfolio-nuit.png` (21 h), voyants de la baie éteints (`--status=unknown`), pour n'afficher aucun état inventé.
+Pour une page qui affiche le préréglage `portfolio`, une image fixe sert d'affiche avant le démarrage du canvas : `npm run export:portfolio` produit `exports/portfolio-jour.png` (14 h) et `exports/portfolio-nuit.png` (21 h), la même chose pour chaque thème (`portfolio-halloween-nuit.png`, `portfolio-anniversaire-jour.png`...), et pour chacune une version légère en qualité standard (suffixe `-sd`, pour les petits écrans). Voyants de la baie éteints (`--status=unknown`), pour n'afficher aucun état inventé.
 
 L'animation se met en pause quand elle n'est pas visible à l'écran et affiche une image fixe si le visiteur a activé la réduction des animations.
 
@@ -120,7 +122,7 @@ npm run export:avatar    # exports/avatar.gif (512×512)
 npm run export:png       # exports/avatar.png et exports/banniere.png
 npm run export:halloween # les mêmes fichiers en version Halloween (suffixe -halloween)
 npm run export:noel      # version Noël (suffixe -noel)
-npm run export:portfolio # exports/portfolio-jour.png et exports/portfolio-nuit.png (960×412)
+npm run export:portfolio # affiches du préréglage portfolio : jour et nuit, sans thème et pour chaque thème, plus leur version légère (-sd)
 ```
 
 Options : `node tools/export.js banner --fps=15 --scale=3`. Image fixe de n'importe quel préréglage : `node tools/export.js still wallpaper --hour=8 --name=matin`.
