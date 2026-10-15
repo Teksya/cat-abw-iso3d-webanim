@@ -56,16 +56,24 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 | `theme` | `'halloween'` : citrouilles, bougie, toiles d'araignée, guirlandes, chauves-souris, fantôme, lune orange, chapeau de sorcière. `'noel'` : sapin illuminé avec étoile, cadeaux, chaussettes, guirlandes, neige derrière la fenêtre, bougie, bonnet de père Noël |
 | `cat` | surcharge l'apparence, par exemple `{ eyes: '#e0b040', flecksAmount: 0, hat: true }` |
 | `width`, `height`, `K`, `OX`, `OY` | taille du canvas, zoom et cadrage (avancé) |
-| `activities` | vie autonome : poids de chaque activité, multiplié au poids normal (`0` = jamais, `2` = deux fois plus souvent). Noms : `napRack`, `napSofa`, `napTree`, `napSun`, `eat`, `drink`, `window`, `groom`, `roll`, `ball`, `scratch`, `zoomies`, `box`, `sit`, `keyboard`. Les poids passés complètent ceux du préréglage |
+| `activities` | vie autonome : poids de chaque activité, multiplié au poids normal (`0` = jamais, `2` = deux fois plus souvent). Noms : `napRack`, `napSofa`, `napTree`, `napSun`, `eat`, `drink`, `window`, `groom`, `roll`, `ball`, `scratch`, `zoomies`, `box`, `sit`, `keyboard`, `celebrate`. Les poids passés complètent ceux du préréglage |
+| `nightActivities` | vie autonome : poids supplémentaires appliqués la nuit seulement (avant 6 h 30 et après 23 h). `portfolio` : `{ napRack: 2.5 }`, la sieste sur la baie devient plus fréquente |
+| `incidentCooldown` | délai (ms) avant qu'un même appareil puisse redéclencher l'activité `incident` (10 minutes par défaut) |
 | `inputTarget` | vie autonome : élément qui reçoit la souris et le doigt (par défaut toute la fenêtre, comme le fond d'écran) |
 | `fps` | plafond d'images par seconde en lecture (30 pour les préréglages en direct) |
 | `catFps` | rythme de recalcul de la chatonne (le plus coûteux) ; entre deux calculs elle est réaffichée telle quelle. 15 pour `portfolio` |
 | `status` | état réel des appareils de la baie, voir `setStatus` ci-dessous. Sans cette option, la baie vit sa vie |
 | `screenText`, `screenColor` | texte affiché sur l'écran du bureau, voir `setScreenText` |
 
-`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`.
+`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), play(nom), getHotspots(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`.
 
 **État réel de la baie** : `setStatus({ fw, switch, server, nas, isp, mini, ups })`, chaque valeur valant `'up'` (voyants animés comme d'habitude), `'down'` (rouge fixe), `'degraded'` (orange fixe) ou `'unknown'` (éteints, gris). Un appareil absent de la carte est `'unknown'` : aucun vert sans donnée. Les appareils : `fw` pare-feu (U9), `switch` (U10), `server` serveur 2U (U6-7), `nas` (U4-5), `isp` box internet et `mini` mini PC (U3), `ups` onduleur (U1-2).
+
+**Incident** : quand un appareil passe `'down'` (ou l'est déjà au démarrage), la chatonne va s'asseoir au sol devant la baie et fixe l'appareil 8 à 12 s. C'est prioritaire sur les activités au hasard, mais n'interrompt jamais une poursuite de laser ; chaque appareil a un délai de recharge (`incidentCooldown`).
+
+**À la demande** : `play(nom)` lance une activité dès que possible (jamais pendant le laser) et renvoie `false` si le nom est inconnu. L'activité `celebrate` (zoomies puis pluie de cœurs) n'est jamais tirée au hasard, seulement demandée.
+
+**Zones à l'écran** : `getHotspots()` renvoie `{ width, height, devices: { nas: { x, y, w, h, points } ... }, cat: { x, y, w, h } }` en pixels du canvas : rectangle englobant et les 4 coins de la façade de chaque appareil, boîte serrée de la chatonne (dernière image calculée). Pour poser des éléments HTML par-dessus un canvas affiché en `object-fit: cover`, appliquer l'échelle `max(largeur affichée / width, hauteur affichée / height)` et le centrage.
 
 **Écran du bureau** : `setScreenText('OK 5/5', '#3ddc84')` remplace les lignes de log par un texte en police pixel 3×5 (11 caractères au plus : lettres sans accent, chiffres, `/ ? : .`). `setScreenText(null)` rétablit les lignes. `frame(ms)` dessine l'image à un instant donné de la boucle. `pause()` fige l'image et arrête tout calcul, `resume()` reprend là où elle s'était arrêtée.
 
