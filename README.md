@@ -59,12 +59,19 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 | `activities` | vie autonome : poids de chaque activité, multiplié au poids normal (`0` = jamais, `2` = deux fois plus souvent). Noms : `napRack`, `napSofa`, `napTree`, `napSun`, `eat`, `drink`, `window`, `groom`, `roll`, `ball`, `scratch`, `zoomies`, `box`, `sit`, `keyboard`. Les poids passés complètent ceux du préréglage |
 | `inputTarget` | vie autonome : élément qui reçoit la souris et le doigt (par défaut toute la fenêtre, comme le fond d'écran) |
 | `fps` | plafond d'images par seconde en lecture (30 pour les préréglages en direct) |
+| `catFps` | rythme de recalcul de la chatonne (le plus coûteux) ; entre deux calculs elle est réaffichée telle quelle. 15 pour `portfolio` |
+| `status` | état réel des appareils de la baie, voir `setStatus` ci-dessous. Sans cette option, la baie vit sa vie |
+| `screenText`, `screenColor` | texte affiché sur l'écran du bureau, voir `setScreenText` |
 
-`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), duration, canvas, setWeather(w), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`. `frame(ms)` dessine l'image à un instant donné de la boucle. `pause()` fige l'image et arrête tout calcul, `resume()` reprend là où elle s'était arrêtée.
+`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`.
+
+**État réel de la baie** : `setStatus({ fw, switch, server, nas, isp, mini, ups })`, chaque valeur valant `'up'` (voyants animés comme d'habitude), `'down'` (rouge fixe), `'degraded'` (orange fixe) ou `'unknown'` (éteints, gris). Un appareil absent de la carte est `'unknown'` : aucun vert sans donnée. Les appareils : `fw` pare-feu (U9), `switch` (U10), `server` serveur 2U (U6-7), `nas` (U4-5), `isp` box internet et `mini` mini PC (U3), `ups` onduleur (U1-2).
+
+**Écran du bureau** : `setScreenText('OK 5/5', '#3ddc84')` remplace les lignes de log par un texte en police pixel 3×5 (11 caractères au plus : lettres sans accent, chiffres, `/ ? : .`). `setScreenText(null)` rétablit les lignes. `frame(ms)` dessine l'image à un instant donné de la boucle. `pause()` fige l'image et arrête tout calcul, `resume()` reprend là où elle s'était arrêtée.
 
 Au doigt (vie autonome) : un tap sur la chatonne la caresse, un appui long (0,45 s) allume le laser, qui suit le doigt tant qu'il reste posé. Tant que le laser n'est pas allumé, le glissé fait défiler la page.
 
-Pour une page qui affiche le préréglage `portfolio`, une image fixe sert d'affiche avant le démarrage du canvas : `npm run export:portfolio` produit `exports/portfolio-jour.png` (14 h) et `exports/portfolio-nuit.png` (21 h).
+Pour une page qui affiche le préréglage `portfolio`, une image fixe sert d'affiche avant le démarrage du canvas : `npm run export:portfolio` produit `exports/portfolio-jour.png` (14 h) et `exports/portfolio-nuit.png` (21 h), voyants de la baie éteints (`--status=unknown`), pour n'afficher aucun état inventé.
 
 L'animation se met en pause quand elle n'est pas visible à l'écran et affiche une image fixe si le visiteur a activé la réduction des animations.
 

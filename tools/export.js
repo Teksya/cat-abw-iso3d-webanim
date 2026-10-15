@@ -13,6 +13,7 @@
  * Options : --fps=20  --scale=1 (bannière) / 2 (avatar)  --theme=halloween|noel
  *   (avec un thème, les fichiers sont suffixés : banniere-halloween.gif, avatar-halloween.gif...)
  *   --hour=H : heure simulée pour les préréglages en direct (jour, nuit)
+ *   --status=unknown : voyants de la baie éteints (aucun état inventé)
  */
 'use strict';
 const fs = require('fs');
@@ -35,10 +36,12 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const HOUR = flag('hour', undefined);
 const nameArg = args.find(x => x.startsWith('--name='));
+/* --status=unknown : tous les appareils sans donnée (voyants éteints), pour une affiche qui n'invente aucun état */
+const STATUS = args.includes('--status=unknown') ? {} : undefined;
 
 function render(preset, scale) {
   const src = createCanvas(1, 1);
-  const scene = CatScene.create(src, { preset, autoplay: false, theme: THEME, hour: HOUR });
+  const scene = CatScene.create(src, { preset, autoplay: false, theme: THEME, hour: HOUR, status: STATUS });
   const W = src.width * scale, H = src.height * scale;
   const out = createCanvas(W, H), o = out.getContext('2d');
   o.imageSmoothingEnabled = false;
