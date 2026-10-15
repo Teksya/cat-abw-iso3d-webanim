@@ -50,7 +50,7 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 
 | Option | Rôle |
 |---|---|
-| `preset` | `'banner'` (960×320, scénario de 23,5 s), `'avatar'` (256×256, 8 s), `'wallpaper'` (960×540, vie autonome) ou `'portfolio'` (960×412, environ 21:9 : la baie, le bureau et le tapis du grand appartement, vie autonome sans la coupure de la baie par le clavier) |
+| `preset` | `'banner'` (960×320, scénario de 23,5 s), `'avatar'` (256×256, 8 s), `'wallpaper'` (960×540, vie autonome) `'portfolio'` (960×412, environ 21:9 : la baie, le bureau et le tapis du grand appartement, vie autonome sans la coupure de la baie par le clavier) ou `'network'` (640×720 : carte du trajet d'une requête, voir plus bas) |
 | `quality` | `'hd'` par défaut, ou `'standard'` (deux fois moins de pixels, beaucoup plus léger à animer en direct) |
 | `autoplay` | `false` pour ne pas lancer l'animation (utile pour l'export) |
 | `theme` | `'halloween'` : citrouilles, bougie, toiles d'araignée, guirlandes, chauves-souris, fantôme, lune orange, chapeau de sorcière. `'noel'` : sapin illuminé avec étoile, cadeaux, chaussettes, guirlandes, neige derrière la fenêtre, bougie, bonnet de père Noël. `'anniversaire'` (d'adoption) : fanions sous l'étagère, gâteau sur le bureau avec une bougie par année depuis `adoptionDate`, chapeau de fête |
@@ -66,8 +66,9 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 | `catFps` | rythme de recalcul de la chatonne (le plus coûteux) ; entre deux calculs elle est réaffichée telle quelle. 15 pour `portfolio` |
 | `status` | état réel des appareils de la baie, voir `setStatus` ci-dessous. Sans cette option, la baie vit sa vie |
 | `screenText`, `screenColor` | texte affiché sur l'écran du bureau, voir `setScreenText` |
+| `progress`, `view`, `accent`, `cdnColor`, `background` | carte du trajet (`network`) : avancement de départ (0 à 1), `'full'` pour toute la carte sans caméra, couleur du paquet, couleur du CDN, fond (transparent sinon) |
 
-`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), play(nom), activity(), getHotspots(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`.
+`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), play(nom), activity(), getHotspots(), duration, canvas, setWeather(w), setStatus(carte), setScreenText(texte, couleur), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur), setProgress(p), progress(), stops }`.
 
 **État réel de la baie** : `setStatus({ fw, switch, server, nas, isp, mini, ups })`, chaque valeur valant `'up'` (voyants animés comme d'habitude), `'down'` (rouge fixe), `'degraded'` (orange fixe) ou `'unknown'` (éteints, gris). Un appareil absent de la carte est `'unknown'` : aucun vert sans donnée. En mode état réel, les voyants sont redessinés par-dessus la lumière du jour (couleurs franches), sauf là où la chatonne passe devant. Les appareils : `fw` pare-feu (U9), `switch` (U10), `server` serveur 2U (U6-7), `nas` (U4-5), `isp` box internet et `mini` mini PC (U3), `ups` onduleur (U1-2).
 
@@ -84,6 +85,10 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 Au doigt (vie autonome) : un tap sur la chatonne la caresse, un appui long (0,45 s) allume le laser, qui suit le doigt tant qu'il reste posé. Tant que le laser n'est pas allumé, le glissé fait défiler la page.
 
 Pour une page qui affiche le préréglage `portfolio`, une image fixe sert d'affiche avant le démarrage du canvas : `npm run export:portfolio` produit `exports/portfolio-jour.png` (14 h) et `exports/portfolio-nuit.png` (21 h), la même chose pour chaque thème (`portfolio-halloween-nuit.png`, `portfolio-anniversaire-jour.png`...), et pour chacune une version légère en qualité standard (suffixe `-sd`, pour les petits écrans). Voyants de la baie éteints (`--status=unknown`), pour n'afficher aucun état inventé.
+
+**Carte du trajet d'une requête** (préréglage `network`) : une maquette isométrique de nuit avec la maison du visiteur, un CDN que la route traverse en tunnel (enseigne en forme de nuage), la barrière du reverse proxy à l'entrée d'une cour, la baie de la pièce et un container dont les portes s'ouvrent. Un paquet part de la maison, passe chaque étape, est traité dans le container puis revient en enveloppe jusqu'à l'écran du visiteur ; la caméra le suit et la chatonne lui court après. L'avancement vient de la page : `setProgress(p)`, de 0 (départ) à 1 (réponse arrivée), lissé à l'affichage. `stops` donne l'avancement de chaque étape (`start`, `cdn`, `proxy`, `app`, `end`), pour caler un défilement ou des étapes texte. Un repère vert apparaît au-dessus de chaque étape franchie. `setStatus` s'applique aussi à la baie de la carte.
+
+Affiches de la carte entière : `npm run export:network` produit `exports/network.png` et `exports/network-sd.png` (enveloppe sur le chemin du retour, voyants éteints). Image fixe à un autre moment : `node tools/export.js still network --progress=0.3 --full`.
 
 L'animation se met en pause quand elle n'est pas visible à l'écran et affiche une image fixe si le visiteur a activé la réduction des animations.
 
@@ -123,6 +128,7 @@ npm run export:png       # exports/avatar.png et exports/banniere.png
 npm run export:halloween # les mêmes fichiers en version Halloween (suffixe -halloween)
 npm run export:noel      # version Noël (suffixe -noel)
 npm run export:portfolio # affiches du préréglage portfolio : jour et nuit, sans thème et pour chaque thème, plus leur version légère (-sd)
+npm run export:network   # carte du trajet entière (network.png et network-sd.png)
 ```
 
 Options : `node tools/export.js banner --fps=15 --scale=3`. Image fixe de n'importe quel préréglage : `node tools/export.js still wallpaper --hour=8 --name=matin`.
@@ -131,6 +137,7 @@ Options : `node tools/export.js banner --fps=15 --scale=3`. Image fixe de n'impo
 
 ## Comment ça marche
 
+- **Carte du trajet** : le décor est dessiné une fois dans un calque plus grand que le canvas, que la caméra parcourt ; le CDN est dans un calque à part, posé avant ou après le paquet et la chatonne selon leur position sur la route (ils passent dessous en tunnel).
 - **Décor** : formes extrudées en projection isométrique 2:1, remplies ligne par ligne pour garder des bords nets, ombrées selon leur orientation. Le décor fixe est dessiné une seule fois dans un calque, seuls les éléments animés (voyants, écran, clavier, vapeur, étoiles) sont redessinés.
 - **Chatonne** : modèle 3D décrit par un champ de distance (capsules et sphères fusionnées en douceur), rendu par lancer de rayons à chaque image puis quantifié sur une palette. Les pattes utilisent une cinématique inverse à deux os, la queue est une chaîne de segments, et le motif du pelage est attaché à chaque partie du corps.
 - **GIF** : palette commune sur toute la boucle, et seuls les pixels qui changent sont encodés d'une image à l'autre (d'où la petite taille).

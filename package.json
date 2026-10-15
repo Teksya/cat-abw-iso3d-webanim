@@ -11,6 +11,7 @@
     "export:halloween": "node tools/export.js all --theme=halloween",
     "export:noel": "node tools/export.js all --theme=noel",
     "export:portfolio": "node tools/export.js posters portfolio --status=unknown",
+    "export:network": "node tools/export.js posters network --status=unknown",
     "build:wallpaper": "node -e \"require('fs').copyFileSync('src/cat-scene.js','wallpaper/cat-scene.js')\""
   },
   "devDependencies": {

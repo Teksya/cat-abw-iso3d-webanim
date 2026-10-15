@@ -13,12 +13,15 @@
  *                                  -> affiches jour (14 h) et nuit (21 h), sans thème puis pour chaque thème :
  *                                     portfolio-jour.png, portfolio-halloween-nuit.png, portfolio-anniversaire-jour.png...
  *                                     et leur version légère en qualité standard (suffixe -sd)
+ *   node tools/export.js posters network
+ *                                  -> carte du trajet entière (network.png et network-sd.png), réponse en chemin du retour
  *
  * Options : --fps=20  --scale=1 (bannière) / 2 (avatar)  --theme=halloween|noel
  *   (avec un thème, les fichiers sont suffixés : banniere-halloween.gif, avatar-halloween.gif...)
  *   --hour=H : heure simulée pour les préréglages en direct (jour, nuit)
  *   --status=unknown : voyants de la baie éteints (aucun état inventé)
  *   --age=N : âge de la chatonne en mois (2 = modèle d'origine, 12 = adulte)
+ *   --progress=P : avancement de la carte du trajet (0 à 1), --full : toute la carte au lieu de la fenêtre de caméra
  */
 'use strict';
 const fs = require('fs');
@@ -44,10 +47,12 @@ const AGE = flag('age', undefined);              // --age=N : âge de la chatonn
 const nameArg = args.find(x => x.startsWith('--name='));
 /* --status=unknown : tous les appareils sans donnée (voyants éteints), pour une affiche qui n'invente aucun état */
 const STATUS = args.includes('--status=unknown') ? {} : undefined;
+const PROGRESS = flag('progress', undefined);
+const VIEW = args.includes('--full') ? 'full' : undefined;
 
 function render(preset, scale, extra) {
   const src = createCanvas(1, 1);
-  const scene = CatScene.create(src, Object.assign({ preset, autoplay: false, theme: THEME, hour: HOUR, status: STATUS, ageMonths: AGE }, extra));
+  const scene = CatScene.create(src, Object.assign({ preset, autoplay: false, theme: THEME, hour: HOUR, status: STATUS, ageMonths: AGE, progress: PROGRESS, view: VIEW }, extra));
   const W = src.width * scale, H = src.height * scale;
   const out = createCanvas(W, H), o = out.getContext('2d');
   o.imageSmoothingEnabled = false;
@@ -124,7 +129,11 @@ if (what === 'still') {
 if (what === 'posters') {
   const preset = args.filter(x => !x.startsWith('--'))[1] || 'portfolio';
   if (!CatScene.presets[preset]) throw new Error('Préréglage inconnu : ' + preset);
-  [null, 'halloween', 'noel', 'anniversaire'].forEach(theme => {
+  if (CatScene.presets[preset].scenario === 'network') {               // carte entière, l'enveloppe sur le chemin du retour
+    const p = PROGRESS === undefined ? 0.62 : PROGRESS;
+    png(preset, preset + '.png', 1, { view: 'full', progress: p });
+    png(preset, preset + '-sd.png', 1, { view: 'full', progress: p, quality: 'standard' });
+  } else [null, 'halloween', 'noel', 'anniversaire'].forEach(theme => {
     [['jour', 14], ['nuit', 21]].forEach(([moment, hour]) => {
       const base = preset + (theme ? '-' + theme : '') + '-' + moment;
       png(preset, base + '.png', 1, { theme: theme || undefined, hour });
