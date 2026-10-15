@@ -7,8 +7,12 @@
  *   node tools/export.js avatar    -> exports/avatar.gif
  *   node tools/export.js png       -> exports/avatar.png (+ exports/banniere.png)
  *
+ *   node tools/export.js still portfolio --hour=14 --name=portfolio-jour
+ *                                  -> exports/portfolio-jour.png (image fixe d'un préréglage, à l'instant stillAt)
+ *
  * Options : --fps=20  --scale=1 (bannière) / 2 (avatar)  --theme=halloween|noel
  *   (avec un thème, les fichiers sont suffixés : banniere-halloween.gif, avatar-halloween.gif...)
+ *   --hour=H : heure simulée pour les préréglages en direct (jour, nuit)
  */
 'use strict';
 const fs = require('fs');
@@ -29,9 +33,12 @@ const name = (base, ext) => base + (THEME ? '-' + THEME : '') + '.' + ext;
 const OUT = path.join(__dirname, '..', 'exports');
 fs.mkdirSync(OUT, { recursive: true });
 
+const HOUR = flag('hour', undefined);
+const nameArg = args.find(x => x.startsWith('--name='));
+
 function render(preset, scale) {
   const src = createCanvas(1, 1);
-  const scene = CatScene.create(src, { preset, autoplay: false, theme: THEME });
+  const scene = CatScene.create(src, { preset, autoplay: false, theme: THEME, hour: HOUR });
   const W = src.width * scale, H = src.height * scale;
   const out = createCanvas(W, H), o = out.getContext('2d');
   o.imageSmoothingEnabled = false;
@@ -100,3 +107,8 @@ function png(preset, file, scale) {
 if (what === 'banner' || what === 'all') gif('banner', name('banniere', 'gif'), 1);
 if (what === 'avatar' || what === 'all') gif('avatar', name('avatar', 'gif'), 2);
 if (what === 'png' || what === 'all') { png('avatar', name('avatar', 'png'), 2); png('banner', name('banniere', 'png'), 1); }
+if (what === 'still') {
+  const preset = args.filter(x => !x.startsWith('--'))[1] || 'banner';
+  if (!CatScene.presets[preset]) throw new Error('Préréglage inconnu : ' + preset);
+  png(preset, nameArg ? nameArg.split('=')[1] + '.png' : name(preset, 'png'), 1);
+}

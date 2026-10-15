@@ -50,14 +50,21 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 
 | Option | Rôle |
 |---|---|
-| `preset` | `'banner'` (960×320, scénario de 23,5 s) ou `'avatar'` (256×256, 8 s) |
+| `preset` | `'banner'` (960×320, scénario de 23,5 s), `'avatar'` (256×256, 8 s), `'wallpaper'` (960×540, vie autonome) ou `'portfolio'` (960×412, environ 21:9 : la baie, le bureau et le tapis du grand appartement, vie autonome sans la coupure de la baie par le clavier) |
 | `quality` | `'hd'` par défaut, ou `'standard'` (deux fois moins de pixels, beaucoup plus léger à animer en direct) |
 | `autoplay` | `false` pour ne pas lancer l'animation (utile pour l'export) |
 | `theme` | `'halloween'` : citrouilles, bougie, toiles d'araignée, guirlandes, chauves-souris, fantôme, lune orange, chapeau de sorcière. `'noel'` : sapin illuminé avec étoile, cadeaux, chaussettes, guirlandes, neige derrière la fenêtre, bougie, bonnet de père Noël |
 | `cat` | surcharge l'apparence, par exemple `{ eyes: '#e0b040', flecksAmount: 0, hat: true }` |
 | `width`, `height`, `K`, `OX`, `OY` | taille du canvas, zoom et cadrage (avancé) |
+| `activities` | vie autonome : poids de chaque activité, multiplié au poids normal (`0` = jamais, `2` = deux fois plus souvent). Noms : `napRack`, `napSofa`, `napTree`, `napSun`, `eat`, `drink`, `window`, `groom`, `roll`, `ball`, `scratch`, `zoomies`, `box`, `sit`, `keyboard`. Les poids passés complètent ceux du préréglage |
+| `inputTarget` | vie autonome : élément qui reçoit la souris et le doigt (par défaut toute la fenêtre, comme le fond d'écran) |
+| `fps` | plafond d'images par seconde en lecture (30 pour les préréglages en direct) |
 
-`create` renvoie `{ frame(ms), start(), duration, canvas }`. `frame(ms)` dessine l'image à un instant donné de la boucle.
+`create` renvoie `{ frame(ms), start(), pause(), resume(), isPaused(), duration, canvas, setWeather(w), pointer(x, y), pointerLeave(), toggleLaser(), set(clé, valeur) }`. `frame(ms)` dessine l'image à un instant donné de la boucle. `pause()` fige l'image et arrête tout calcul, `resume()` reprend là où elle s'était arrêtée.
+
+Au doigt (vie autonome) : un tap sur la chatonne la caresse, un appui long (0,45 s) allume le laser, qui suit le doigt tant qu'il reste posé. Tant que le laser n'est pas allumé, le glissé fait défiler la page.
+
+Pour une page qui affiche le préréglage `portfolio`, une image fixe sert d'affiche avant le démarrage du canvas : `npm run export:portfolio` produit `exports/portfolio-jour.png` (14 h) et `exports/portfolio-nuit.png` (21 h).
 
 L'animation se met en pause quand elle n'est pas visible à l'écran et affiche une image fixe si le visiteur a activé la réduction des animations.
 
@@ -86,7 +93,7 @@ Tout se passe dans `src/cat-scene.js` :
 
 ## Exporter en GIF
 
-Nécessite Node.js 18 ou plus.
+Nécessite Node.js 18 ou plus. Sur les versions récentes de Node (26 et plus), `canvas` 2 n'a pas de binaire précompilé : `npm install --no-save canvas@3` le remplace sans toucher au `package.json`.
 
 ```bash
 npm install
@@ -96,9 +103,10 @@ npm run export:avatar    # exports/avatar.gif (512×512)
 npm run export:png       # exports/avatar.png et exports/banniere.png
 npm run export:halloween # les mêmes fichiers en version Halloween (suffixe -halloween)
 npm run export:noel      # version Noël (suffixe -noel)
+npm run export:portfolio # exports/portfolio-jour.png et exports/portfolio-nuit.png (960×412)
 ```
 
-Options : `node tools/export.js banner --fps=15 --scale=3`
+Options : `node tools/export.js banner --fps=15 --scale=3`. Image fixe de n'importe quel préréglage : `node tools/export.js still wallpaper --hour=8 --name=matin`.
 
 `canvas` fournit des binaires précompilés pour la plupart des systèmes. Sinon, voir la [documentation de node-canvas](https://github.com/Automattic/node-canvas#compiling) pour les dépendances à installer.
 

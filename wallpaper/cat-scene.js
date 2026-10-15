@@ -12,7 +12,9 @@
   var PRESETS = {
     banner: { width: 960, height: 320, K: 8, OX: 464, OY: 280, scenario: 'banner', vignette: 'banner', stillAt: 3000 },
     avatar: { width: 256, height: 256, K: 24, OX: -472, OY: 520, scenario: 'avatar', vignette: 'avatar', stillAt: 4300 },
-    wallpaper: { width: 960, height: 540, K: 8, OX: 464, OY: 360, scenario: 'live', vignette: 'wallpaper', room: 'large', stillAt: 3000, fps: 30 }
+    wallpaper: { width: 960, height: 540, K: 8, OX: 464, OY: 360, scenario: 'live', vignette: 'wallpaper', room: 'large', stillAt: 3000, fps: 30 },
+    /* Bandeau 21:9 du grand appartement (baie, bureau, tapis), sans la coupure de la baie par le clavier */
+    portfolio: { width: 960, height: 412, K: 8, OX: 464, OY: 290, scenario: 'live', vignette: 'wallpaper', room: 'large', stillAt: 3000, fps: 30, catFps: 15, activities: { keyboard: 0 } }
   };
 
   /* ================= Apparence de la chatonne (à faire évoluer) ================= */
@@ -35,6 +37,11 @@
     for (k0 in base) opt[k0] = base[k0];
     if (options && options.quality === 'standard') { opt.width /= 2; opt.height /= 2; opt.K /= 2; opt.OX /= 2; opt.OY /= 2; }
     for (k0 in (options || {})) opt[k0] = options[k0];
+    if (base.activities && options && options.activities) {   // les poids passés complètent ceux du préréglage
+      opt.activities = {};
+      for (k0 in base.activities) opt.activities[k0] = base.activities[k0];
+      for (k0 in options.activities) opt.activities[k0] = options.activities[k0];
+    }
     var HW = opt.theme === 'halloween';      // thème Halloween
     var XM = opt.theme === 'noel';           // thème Noël
     var LARGE = opt.room === 'large';        // grand appartement (fond d'écran)
@@ -1775,7 +1782,7 @@
     }
 
     /* ================= Souris : laser et caresses ================= */
-    var PTR = { px: 0, py: 0, last: -1e9, inside: false, down: false, laserOn: false, speed: 0 }, INPUT = { laser: null, pet: false }, lastBox = null, clockMs = 0;
+    var PTR = { px: 0, py: 0, last: -1e9, inside: false, down: false, laserOn: false, touchLaser: false, speed: 0 }, INPUT = { laser: null, pet: false }, lastBox = null, clockMs = 0;
     function pointer(cx, cy) {
       var dt = Math.max(16, clockMs - PTR.last), v = Math.hypot(cx - PTR.px, cy - PTR.py) / dt * 1000;
       PTR.speed = PTR.speed * 0.6 + Math.min(4000, v) * 0.4;
@@ -1832,7 +1839,8 @@
       INPUT.laser = null; INPUT.pet = false;
       if (!PTR.inside || opt.interactive === false) return;
       var age = clockMs - PTR.last, mode = opt.laserMode || 'dblclick', want;
-      if (mode === 'hold') want = PTR.down && age < 4000;
+      if (PTR.touchLaser) want = true;                                             // appui long au doigt : laser tant que le doigt reste posé
+      else if (mode === 'hold') want = PTR.down && age < 4000;
       else if (mode === 'always') want = age < 2500 && PTR.speed > 180 && !nearCat(PTR.px, PTR.py, 40);
       else want = PTR.laserOn && age < 4000;                                       // le point s'éteint si le curseur ne bouge plus
       if (want) { INPUT.laser = laserHit(PTR.px, PTR.py); return; }
@@ -1871,15 +1879,43 @@
       }
       g.globalAlpha = 1;
     }
+    /* Coordonnées écran -> pixels de la scène (canvas affiché en object-fit: cover) */
+    function toScene(clientX, clientY) {
+      var r = cv.getBoundingClientRect(), sc = Math.max(r.width / W, r.height / H);
+      return [(clientX - r.left - (r.width - W * sc) / 2) / sc, (clientY - r.top - (r.height - H * sc) / 2) / sc];
+    }
+    /* Entrées : toute la fenêtre par défaut (fond d'écran), ou seulement l'élément passé dans opt.inputTarget.
+       Au doigt : un tap la caresse, un appui long allume le laser qui suit le doigt. */
     if (opt.scenario === 'live' && typeof window !== 'undefined' && window.addEventListener && opt.interactive !== false) {
-      window.addEventListener('mousemove', function (e) {
-        var r = cv.getBoundingClientRect(), sc = Math.max(r.width / W, r.height / H);
-        pointer((e.clientX - r.left - (r.width - W * sc) / 2) / sc, (e.clientY - r.top - (r.height - H * sc) / 2) / sc);
-      });
-      document.addEventListener('mouseleave', pointerLeave);
-      window.addEventListener('mousedown', function (e) { if (e.button === 0) PTR.down = true; });
+      var target = opt.inputTarget || window, lastTouch = -1e9, TOUCH = { timer: 0, x: 0, y: 0 };
+      var fromMouse = function () { return Date.now() - lastTouch > 800; };    // ignore la souris simulée après un toucher
+      target.addEventListener('mousemove', function (e) { if (fromMouse()) { var p = toScene(e.clientX, e.clientY); pointer(p[0], p[1]); } });
+      (target === window ? document : target).addEventListener('mouseleave', pointerLeave);
+      target.addEventListener('mousedown', function (e) { if (e.button === 0 && fromMouse()) PTR.down = true; });
       window.addEventListener('mouseup', function () { PTR.down = false; });
-      window.addEventListener('dblclick', toggleLaser);
+      target.addEventListener('dblclick', function () { if (fromMouse()) toggleLaser(); });
+      target.addEventListener('touchstart', function (e) {
+        lastTouch = Date.now();
+        if (e.touches.length !== 1) return;
+        var t = e.touches[0], p = toScene(t.clientX, t.clientY);
+        TOUCH.x = t.clientX; TOUCH.y = t.clientY;
+        pointer(p[0], p[1]);
+        clearTimeout(TOUCH.timer);
+        TOUCH.timer = setTimeout(function () { PTR.touchLaser = true; }, 450);
+      }, { passive: true });
+      target.addEventListener('touchmove', function (e) {
+        lastTouch = Date.now();
+        var t = e.touches[0];
+        if (!PTR.touchLaser) {                                                  // le doigt bouge avant l'appui long : on laisse défiler la page
+          if (Math.hypot(t.clientX - TOUCH.x, t.clientY - TOUCH.y) > 10) clearTimeout(TOUCH.timer);
+          return;
+        }
+        e.preventDefault();
+        var p = toScene(t.clientX, t.clientY); pointer(p[0], p[1]);
+      }, { passive: false });
+      var touchEnd = function () { lastTouch = Date.now(); clearTimeout(TOUCH.timer); PTR.touchLaser = false; };
+      target.addEventListener('touchend', touchEnd);
+      target.addEventListener('touchcancel', touchEnd);
     }
 
     /* ================= Vie autonome (fond d'écran) =================
@@ -2275,11 +2311,15 @@
           ['sit', 1, function () { sitLook('rug'); }],
           ['keyboard', hour >= 17 && hour < 24 ? 0.6 : 0.15, keyboard]
         ];
+        if (opt.activities) A.forEach(function (a) {                      // poids réglables : 0 = jamais, 2 = deux fois plus souvent
+          if (opt.activities[a[0]] !== undefined) a[1] *= opt.activities[a[0]];
+        });
         if (opt.script) {                                                 // ordre imposé (export vidéo)
           var nm = opt.script[scriptI++ % opt.script.length];
           for (var j = 0; j < A.length; j++) if (A[j][0] === nm) { lastAct = nm; A[j][2](); return; }
         }
         A = A.filter(function (a) { return a[1] > 0 && a[0] !== lastAct; });
+        if (!A.length) { sitLook('rug'); return; }                       // toutes les activités désactivées
         var tot = A.reduce(function (s2, a) { return s2 + a[1]; }, 0), r = rand() * tot;
         for (var i = 0; i < A.length; i++) { r -= A[i][1]; if (r <= 0 || i === A.length - 1) { lastAct = A[i][0]; A[i][2](); return; } }
       }
@@ -2361,12 +2401,16 @@
     g = vig.getContext('2d'); drawVignette();
     g = ctx;
 
+    /* opt.catFps : la chatonne (le plus coûteux) est recalculée à ce rythme et réaffichée telle quelle entre deux calculs */
+    var lastCat = null, lastCatMs = -1e9;
     function frame(ms) {
       var hour = timeOfDay(ms);
       clockMs = ms;
       if (LIVE) { updateWeather(ms); readInput(); }
       var sunny = WX.cloud < 0.5 && WX.rain < 0.05 && WX.snow < 0.05;
-      var st = LIVE ? LIVE.state(ms, hour, sunny, INPUT) : stateAt(ms), cat = buildCat(st.q, ms);
+      var st = LIVE ? LIVE.state(ms, hour, sunny, INPUT) : stateAt(ms);
+      var fresh = !opt.catFps || !lastCat || ms - lastCatMs >= 1000 / opt.catFps - 1 || ms < lastCatMs;
+      var cat = fresh ? buildCat(st.q, ms) : lastCat;
       api.state = st;
       g = ctx;
       ctx.drawImage(bg, 0, 0);
@@ -2387,7 +2431,8 @@
       if (LARGE && !inBox) drawBoxFront();
       if (LIVE) { drawBall(); drawLaser(); }
       drawCatShadow(cat);
-      lastBox = renderCat(cat);
+      if (fresh) { lastBox = renderCat(cat); lastCat = cat; lastCatMs = ms; }
+      else if (lastBox) ctx.drawImage(catCv, 0, 0, lastBox.w, lastBox.h, lastBox.x0, lastBox.y0, lastBox.w, lastBox.h);
       drawFace(cat, lastBox);
       if (st.purr) drawHearts(cat.info.head, ms);
       if (inBox) drawBoxFront();
@@ -2398,21 +2443,33 @@
     }
 
     /* ================= Lecture ================= */
-    var running = false;
+    var running = false, paused = false, rafId = 0, loop = null, last = null;
     function start() {
       if (running) return; running = true;
-      var visible = true, clock = 0, last = null, acc = 0, minDt = opt.fps ? 1000 / opt.fps : 0;
+      var visible = true, clock = 0, acc = 0, minDt = opt.fps ? 1000 / opt.fps : 0;
       if (typeof IntersectionObserver !== 'undefined') new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(cv);
-      function loop(now) {
+      loop = function (now) {
         if (last === null) last = now;
         var dt = Math.min(100, now - last); last = now;
         if (visible && !document.hidden) { clock += dt; acc += dt; if (acc >= minDt) { acc = minDt ? acc % minDt : 0; frame(clock); } }
-        requestAnimationFrame(loop);
-      }
-      requestAnimationFrame(loop);
+        rafId = requestAnimationFrame(loop);
+      };
+      if (!paused) rafId = requestAnimationFrame(loop);
+    }
+    /* Pause : l'image reste figée, plus aucun calcul ; la reprise continue là où elle s'était arrêtée */
+    function pause() {
+      paused = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+    function resume() {
+      if (!paused) return;
+      paused = false;
+      if (running && !rafId) { last = null; rafId = requestAnimationFrame(loop); }
     }
 
-    var api = { frame: frame, duration: TOTAL, start: start, canvas: cv, state: null, setWeather: setWeather, pointer: pointer, pointerLeave: pointerLeave,
+    var api = { frame: frame, duration: TOTAL, start: start, pause: pause, resume: resume, isPaused: function () { return paused; },
+      canvas: cv, state: null, setWeather: setWeather, pointer: pointer, pointerLeave: pointerLeave,
       toggleLaser: toggleLaser, set: function (k, v) { opt[k] = v; } };
     if (opt.autoplay !== false) {
       var reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

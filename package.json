@@ -10,6 +10,7 @@
     "export:png": "node tools/export.js png",
     "export:halloween": "node tools/export.js all --theme=halloween",
     "export:noel": "node tools/export.js all --theme=noel",
+    "export:portfolio": "node tools/export.js still portfolio --hour=14 --name=portfolio-jour && node tools/export.js still portfolio --hour=21 --name=portfolio-nuit",
     "build:wallpaper": "node -e \"require('fs').copyFileSync('src/cat-scene.js','wallpaper/cat-scene.js')\""
   },
   "devDependencies": {
