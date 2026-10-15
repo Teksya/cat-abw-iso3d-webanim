@@ -1,6 +1,6 @@
 # cat-banner
 
-Ma chatonne écaille de tortue en pixel art isométrique 3D : une **bannière** animée (elle dort sur la baie serveur, se réveille, se roule sur le clavier et éteint tout) et un **avatar** assorti (gros plan, lent clignement d'yeux).
+Blue, ma chatonne (tachetée noir et brun, très légères touches rousses, yeux bleu-vert), en pixel art isométrique 3D : une **bannière** animée (elle dort sur la baie serveur, se réveille, se roule sur le clavier et éteint tout) et un **avatar** assorti (gros plan, lent clignement d'yeux).
 
 Tout tourne dans le navigateur avec un seul fichier JavaScript, sans dépendance. Un script Node permet d'exporter les animations en GIF (Discord, GitHub, etc.).
 
@@ -53,8 +53,10 @@ Le CSS de la bannière (pleine largeur, ratio 3:1, pixels nets) est dans `index.
 | `preset` | `'banner'` (960×320, scénario de 23,5 s), `'avatar'` (256×256, 8 s), `'wallpaper'` (960×540, vie autonome) ou `'portfolio'` (960×412, environ 21:9 : la baie, le bureau et le tapis du grand appartement, vie autonome sans la coupure de la baie par le clavier) |
 | `quality` | `'hd'` par défaut, ou `'standard'` (deux fois moins de pixels, beaucoup plus léger à animer en direct) |
 | `autoplay` | `false` pour ne pas lancer l'animation (utile pour l'export) |
-| `theme` | `'halloween'` : citrouilles, bougie, toiles d'araignée, guirlandes, chauves-souris, fantôme, lune orange, chapeau de sorcière. `'noel'` : sapin illuminé avec étoile, cadeaux, chaussettes, guirlandes, neige derrière la fenêtre, bougie, bonnet de père Noël |
-| `cat` | surcharge l'apparence, par exemple `{ eyes: '#e0b040', flecksAmount: 0, hat: true }` |
+| `theme` | `'halloween'` : citrouilles, bougie, toiles d'araignée, guirlandes, chauves-souris, fantôme, lune orange, chapeau de sorcière. `'noel'` : sapin illuminé avec étoile, cadeaux, chaussettes, guirlandes, neige derrière la fenêtre, bougie, bonnet de père Noël. `'anniversaire'` (d'adoption) : fanions sous l'étagère, gâteau sur le bureau avec une bougie par année depuis `adoptionDate`, chapeau de fête |
+| `birthDate` | date de naissance (par exemple `'2026-08-15'`) : l'âge pilote les proportions, du modèle d'origine (2 mois) à l'adulte (12 mois). `ageMonths` impose un âge (aperçus, exports) |
+| `adoptionDate` | date d'adoption, pour le nombre de bougies du thème `anniversaire` (1 à 5) |
+| `cat` | surcharge l'apparence, par exemple `{ eyes: '#e0b040', flecksAmount: 0, rufousAmount: 0, hat: true }` |
 | `width`, `height`, `K`, `OX`, `OY` | taille du canvas, zoom et cadrage (avancé) |
 | `activities` | vie autonome : poids de chaque activité, multiplié au poids normal (`0` = jamais, `2` = deux fois plus souvent). Noms : `napRack`, `napSofa`, `napTree`, `napSun`, `eat`, `drink`, `window`, `groom`, `roll`, `ball`, `scratch`, `zoomies`, `box`, `sit`, `keyboard`, `celebrate`. Les poids passés complètent ceux du préréglage |
 | `nightActivities` | vie autonome : poids supplémentaires appliqués la nuit seulement (avant 6 h 30 et après 23 h). `portfolio` : `{ napRack: 2.5 }`, la sieste sur la baie devient plus fréquente |
@@ -99,12 +101,12 @@ Dans une page : `CatScene.create(canvas, { preset: 'wallpaper' })`, puis `scene.
 
 Tout se passe dans `src/cat-scene.js` :
 
-- **Couleurs, yeux, mouchetures** : l'objet `CAT_STYLE` tout en haut (pelage, mouchetures, intérieur des oreilles, yeux, nez, quantité de mouchetures).
-- **Proportions** (pour la faire grandir) : fonction `buildCat`, sections *Corps : 3 segments arrondis* (rayons `rs`, longueur `seg`), *Tête* (rayon de la tête, joues, museau, oreilles), *Pattes* (longueurs `a` et `b`, épaisseurs) et *Queue* (rayons `tr`, nombre de segments).
+- **Couleurs, yeux, taches** : l'objet `CAT_STYLE` tout en haut (pelage noir, taches brunes et leur quantité, touches rousses `rufous` et `rufousAmount`, intérieur des oreilles, yeux, nez).
+- **Croissance** : `GROW`, juste avant `buildCat` (corps, épaisseur, pattes, queue, de 2 à 12 mois). **Proportions de base** : fonction `buildCat`, sections *Corps : 3 segments arrondis* (rayons `rs`, longueur `seg`), *Tête* (rayon de la tête, joues, museau, oreilles), *Pattes* (longueurs `a` et `b`, épaisseurs) et *Queue* (rayons `tr`, nombre de segments).
 - **Poses** : section *Poses du chat* (`STAND`, `SLEEP`, `CROUCH`, `TAKEOFF`, `BELLY`, `SIT`...). Chaque pose est une liste de paramètres (hauteur du corps, courbure, position des pattes, queue, yeux, bouche, roulade...) et les animations passent de l'une à l'autre en douceur.
 - **Scénarios** : `PH_BANNER` et `PH_AVATAR`, deux listes de `[durée en ms, fonction]`. Chaque fonction reçoit l'avancement de l'étape (0 à 1) et renvoie la pose, la position et l'état de la baie et de l'écran.
 - **Décor** : `drawRoom`, `drawDesk`, `drawRack` (baie 12U), `drawChair`, `drawPlant`, `drawWindow`...
-- **Thèmes** : Halloween (section *Halloween*, drapeau `HW`) et Noël (section *Noël*, drapeau `XM`). Chaque thème a une partie fixe (dessinée une fois) et une partie animée (redessinée à chaque image). Pour un nouveau thème, suivre le même modèle.
+- **Thèmes** : Halloween (section *Halloween*, drapeau `HW`), Noël (section *Noël*, drapeau `XM`) et anniversaire (section *Anniversaire*, drapeau `AN`). Chaque thème a une partie fixe (dessinée une fois) et une partie animée (redessinée à chaque image). Pour un nouveau thème, suivre le même modèle.
 
 ## Exporter en GIF
 
@@ -133,7 +135,7 @@ Options : `node tools/export.js banner --fps=15 --scale=3`. Image fixe de n'impo
 
 ## Idées pour la suite
 
-- La faire grandir au fil des mois (proportions, taille, longueur du poil)
+- Longueur du poil qui évolue avec l'âge
 - Jouer avec un jouet, manger dans la gamelle, se percher sur la chaise
 - Cycle jour / nuit, saisons dans la fenêtre
 - Nouvelles scènes pour d'autres formats (bannière Twitch, fond d'écran)

@@ -1,7 +1,7 @@
 {
   "name": "cat-banner",
   "version": "1.0.0",
-  "description": "Chatonne écaille de tortue en pixel art isométrique : bannière et avatar animés (navigateur + export GIF)",
+  "description": "Blue, chatonne tachetée noir et brun en pixel art isométrique : bannière, avatar et scènes animées (navigateur + export GIF)",
   "main": "src/cat-scene.js",
   "scripts": {
     "export": "node tools/export.js all",
